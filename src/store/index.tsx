@@ -1,11 +1,39 @@
 import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
 import Taro from '@tarojs/taro';
-import { PhotoTask, PhotoItem, HistoryRecord, ReviewTask } from '@/types';
+import { PhotoTask, PhotoItem, HistoryRecord, ReviewTask, ActionLog, ActionLogType } from '@/types';
 import { photoItems as defaultPhotoItems, mockUserInfo } from '@/data/photoTasks';
 import { historyRecords as defaultHistoryRecords } from '@/data/historyRecords';
 import { reviewTasks as defaultReviewTasks, rejectReasons } from '@/data/reviewTasks';
 
 const STORAGE_KEY = 'ortho_app_state_v1';
+export const COMPARE_PARAMS_KEY = 'ortho_compare_params_v1';
+
+export interface LastCompareParams {
+  appointmentId?: string;
+  leftId?: string;
+  rightId?: string;
+}
+
+const makeLog = (type: ActionLogType, actor: ActionLog['actor'], actorName: string, title: string, description: string, extra?: Partial<ActionLog>): ActionLog => {
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const time = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  return {
+    id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    type,
+    time,
+    actor,
+    actorName,
+    title,
+    description,
+    ...extra,
+  };
+};
+
+const appendLog = <T extends { actionLogs?: ActionLog[] }>(target: T, log: ActionLog): T => {
+  const logs = [...(target.actionLogs || []), log];
+  return { ...target, actionLogs: logs };
+};
 
 const createInitialPhotoTask = (): PhotoTask => {
   const items: PhotoItem[] = defaultPhotoItems.map(item => ({
@@ -14,6 +42,9 @@ const createInitialPhotoTask = (): PhotoTask => {
     userPhoto: undefined,
     rejectReason: undefined,
   }));
+  const now = new Date();
+  const pad = (n: number) => n.toString().padStart(2, '0');
+  const created = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
   return {
     id: 'task-current',
     title: '复诊前自拍检查',
@@ -24,6 +55,15 @@ const createInitialPhotoTask = (): PhotoTask => {
     totalCount: items.length,
     completedCount: 0,
     status: 'in_progress',
+    actionLogs: [{
+      id: `log-init-${Date.now()}`,
+      type: 'task_created',
+      time: created,
+      actor: 'system',
+      actorName: '系统',
+      title: '🎯 任务下发',
+      description: `医生配置了 ${items.length} 张拍摄项目`,
+    }],
   };
 };
 
@@ -44,9 +84,10 @@ type Action =
   | { type: 'APPROVE_REVIEW_PHOTO'; payload: { taskId: string; photoId: string } }
   | { type: 'REJECT_REVIEW_PHOTO'; payload: { taskId: string; photoId: string; reasons: string[] } }
   | { type: 'APPROVE_ALL_REVIEW'; payload: { taskId: string } }
-  | { type: 'APPLY_REVIEW_RESULTS'; payload: { taskId: string } }
+  | { type: 'APPLY_REVIEW_RESULTS'; payload: { taskId: string; handoverNote?: string; patientTip?: string } }
   | { type: 'RESET_TASK' }
-  | { type: 'LOAD_STATE'; payload: AppState };
+  | { type: 'LOAD_STATE'; payload: AppState }
+  | { type: 'ADD_ACTION_LOG'; payload: { target: 'currentTask' | 'reviewTask'; taskId: string; log: ActionLog } };
 
 const getCompletedCount = (items: PhotoItem[]): number => {
   return items.filter(i => i.status === 'submitted' || i.status === 'approved').length;
@@ -86,18 +127,31 @@ function reducer(state: AppState, action: Action): AppState {
       const now = new Date();
       const pad = (n: number) => n.toString().padStart(2, '0');
       const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const targetItem = state.currentTask.items.find(i => i.id === itemId);
+      const isRetake = targetItem?.status === 'rejected';
       const newItems = state.currentTask.items.map(item =>
         item.id === itemId
           ? { ...item, status: 'submitted' as const, userPhoto: photoUrl, rejectReason: undefined, submittedAt: ts }
           : item
       );
       const completedCount = getCompletedCount(newItems);
-      const newTask: PhotoTask = {
+      let newTask: PhotoTask = {
         ...state.currentTask,
         items: newItems,
         completedCount,
         status: calcTaskStatus({ ...state.currentTask, items: newItems, completedCount }),
       };
+      if (targetItem) {
+        const log = makeLog(
+          isRetake ? 'patient_retake' : 'patient_upload',
+          'patient',
+          state.userInfo.name,
+          isRetake ? '🔁 患者重拍照片' : '📤 患者上传照片',
+          isRetake ? `重新上传了「${targetItem.name}」，等待护士再次核对` : `完成了「${targetItem.name}」的拍摄`,
+          { photoName: targetItem.name }
+        );
+        newTask = appendLog(newTask, log);
+      }
       return { ...state, currentTask: newTask };
     }
 
@@ -153,7 +207,23 @@ function reducer(state: AppState, action: Action): AppState {
         status: 'pending' as const,
       }));
 
-      const newReviewTask: ReviewTask = {
+      const submitLog = makeLog(
+        'patient_submit',
+        'patient',
+        state.userInfo.name,
+        '📨 患者提交审核',
+        `提交了 ${submittedItems.length} 张照片，等待护士核对`,
+      );
+
+      const initLog = makeLog(
+        'task_created',
+        'system',
+        '系统',
+        '🎯 患者任务待核',
+        `共 ${submittedItems.length} 张照片待核对，复诊日期 ${task.appointmentDate}`,
+      );
+
+      let newReviewTask: ReviewTask = {
         id: reviewTaskId,
         patientName: state.userInfo.name,
         patientAvatar: state.userInfo.avatar,
@@ -163,6 +233,7 @@ function reducer(state: AppState, action: Action): AppState {
         photoCount: reviewPhotos.length,
         status: 'pending',
         photos: reviewPhotos,
+        actionLogs: [initLog, submitLog],
       };
 
       const newHistory: HistoryRecord = {
@@ -182,13 +253,14 @@ function reducer(state: AppState, action: Action): AppState {
         rejectedItems: [],
       };
 
-      const newTask: PhotoTask = {
+      let newTask: PhotoTask = {
         ...task,
         status: 'reviewing',
         submittedAt: submitTime,
         appointmentId,
         reviewTaskId,
       };
+      newTask = appendLog(newTask, submitLog);
 
       return {
         ...state,
@@ -200,17 +272,32 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'APPROVE_REVIEW_PHOTO': {
       const { taskId, photoId } = action.payload;
+      let logged = false;
       const newReviewTasks = state.reviewTasks.map(rt => {
         if (rt.id !== taskId) return rt;
+        const photo = rt.photos.find(p => p.id === photoId);
         const newPhotos = rt.photos.map(p =>
           p.id === photoId ? { ...p, status: 'approved' as const } : p
         );
         const allApproved = newPhotos.every(p => p.status === 'approved');
-        return {
+        let result = {
           ...rt,
           photos: newPhotos,
           status: allApproved ? 'approved' as const : rt.status,
         };
+        if (photo && !logged) {
+          logged = true;
+          const log = makeLog(
+            'staff_approve',
+            'staff',
+            state.staffInfo.name,
+            '✅ 护士通过照片',
+            `「${photo.name}」符合要求，审核通过`,
+            { photoName: photo.name }
+          );
+          result = appendLog(result, log);
+        }
+        return result;
       });
       return { ...state, reviewTasks: newReviewTasks };
     }
@@ -218,19 +305,34 @@ function reducer(state: AppState, action: Action): AppState {
     case 'REJECT_REVIEW_PHOTO': {
       const { taskId, photoId, reasons } = action.payload;
       const reasonStr = reasons.join('、');
+      let logged = false;
       const newReviewTasks = state.reviewTasks.map(rt => {
         if (rt.id !== taskId) return rt;
+        const photo = rt.photos.find(p => p.id === photoId);
         const newPhotos = rt.photos.map(p =>
           p.id === photoId
             ? { ...p, status: 'rejected' as const, rejectReason: reasonStr }
             : p
         );
         const hasRejected = newPhotos.some(p => p.status === 'rejected');
-        return {
+        let result = {
           ...rt,
           photos: newPhotos,
           status: hasRejected ? 'rejected' as const : rt.status,
         };
+        if (photo && !logged) {
+          logged = true;
+          const log = makeLog(
+            'staff_reject',
+            'staff',
+            state.staffInfo.name,
+            '❌ 护士打回照片',
+            `「${photo.name}」不合格：${reasonStr}`,
+            { photoName: photo.name, reasons }
+          );
+          result = appendLog(result, log);
+        }
+        return result;
       });
       return { ...state, reviewTasks: newReviewTasks };
     }
@@ -249,7 +351,7 @@ function reducer(state: AppState, action: Action): AppState {
     }
 
     case 'APPLY_REVIEW_RESULTS': {
-      const { taskId } = action.payload;
+      const { taskId, handoverNote, patientTip } = action.payload;
       const reviewTask = state.reviewTasks.find(rt => rt.id === taskId);
       if (!reviewTask) return state;
 
@@ -289,18 +391,49 @@ function reducer(state: AppState, action: Action): AppState {
       const hasRejected = newItems.some(i => i.status === 'rejected');
       const allApproved = newItems.every(i => i.status === 'approved');
 
-      const newTask: PhotoTask = {
+      let patientTipText = patientTip || '';
+      if (!patientTipText) {
+        if (allApproved) patientTipText = '✅ 所有照片均已通过审核，复诊当天可正常使用，期待您准时到诊。';
+        else if (hasRejected) patientTipText = `⚠️ 您有 ${rejectedList.length} 张照片需要重新拍摄，请尽快按提示重拍后再次提交。`;
+      }
+
+      const overallNote = handoverNote || (
+        allApproved
+          ? `本次共 ${approvedList.length} 张照片全部通过，可直接用于本次复诊对比。`
+          : `${approvedList.length} 张可用，${rejectedList.length} 张需复拍（${rejectedList.map(r => r.name).join('、')}），复诊当天请优先确认。`
+      );
+
+      const submitLog = makeLog(
+        'staff_submit',
+        'staff',
+        staffName,
+        '📝 护士完成核对',
+        `通过 ${approvedList.length} 张，重拍 ${rejectedList.length} 张。${overallNote}`,
+      );
+
+      let newTask: PhotoTask = {
         ...state.currentTask,
         items: newItems,
         completedCount,
         status: allApproved ? 'approved' : hasRejected ? 'rejected' : 'reviewing',
         reviewedAt,
+        overallNote,
+        patientTip: patientTipText,
       };
+      newTask = appendLog(newTask, submitLog);
 
-      // 同步更新 reviewTask 的 reviewedAt/reviewedBy
+      // 同步更新 reviewTask 的 reviewedAt/reviewedBy/交接备注/患者提示
       const newReviewTasks = state.reviewTasks.map(rt => {
         if (rt.id !== taskId) return rt;
-        return { ...rt, reviewedAt, reviewedBy: staffName };
+        return {
+          ...rt,
+          reviewedAt,
+          reviewedBy: staffName,
+          handoverNote,
+          patientTip: patientTipText,
+          overallNote,
+          actionLogs: [...(rt.actionLogs || []), submitLog],
+        };
       });
 
       // 更新对应历史记录（按 appointmentId 匹配）
@@ -333,6 +466,15 @@ function reducer(state: AppState, action: Action): AppState {
         reviewTasks: newReviewTasks,
         historyRecords: newHistoryRecords,
       };
+    }
+
+    case 'ADD_ACTION_LOG': {
+      const { target, taskId, log } = action.payload;
+      if (target === 'currentTask') {
+        return { ...state, currentTask: appendLog(state.currentTask, log) };
+      }
+      const newRT = state.reviewTasks.map(rt => rt.id === taskId ? appendLog(rt, log) : rt);
+      return { ...state, reviewTasks: newRT };
     }
 
     case 'RESET_TASK': {

@@ -3,7 +3,7 @@
 .container {
   min-height: 100vh;
   background: $color-bg-page;
-  padding-bottom: 300rpx;
+  padding-bottom: 520rpx;
 }
 
 .patientHeader {
@@ -298,6 +298,49 @@
     &.bannerPending {
       background: $color-warning-bg;
       .bannerNum { color: $color-warning; }
+    }
+  }
+}
+
+.noteSection {
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  border-top: 1rpx solid $color-divider;
+  border-bottom: 1rpx solid $color-divider;
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+
+  .noteField {
+    position: relative;
+
+    .noteLabel {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-xs;
+      display: block;
+    }
+
+    .noteInput {
+      width: 100%;
+      min-height: 100rpx;
+      padding: $spacing-sm $spacing-md;
+      background: $color-bg-section;
+      border-radius: $radius-md;
+      border: 1rpx solid $color-divider;
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      line-height: 1.5;
+      box-sizing: border-box;
+    }
+
+    .noteCount {
+      position: absolute;
+      right: $spacing-xs;
+      bottom: $spacing-xs;
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
     }
   }
 }

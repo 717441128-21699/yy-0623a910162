@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useRef } from 'react';
-import { View, Text, Image, ScrollView } from '@tarojs/components';
+import { View, Text, Image, ScrollView, Textarea } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
@@ -25,6 +25,8 @@ const ReviewDetailPage: React.FC = () => {
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [currentPhotoId, setCurrentPhotoId] = useState<string | null>(null);
   const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
+  const [handoverNote, setHandoverNote] = useState<string>(task?.handoverNote || '');
+  const [patientTip, setPatientTip] = useState<string>(task?.patientTip || '');
 
   const activePhoto = photos[activeIndex];
 
@@ -171,7 +173,14 @@ const ReviewDetailPage: React.FC = () => {
     Taro.showLoading({ title: '提交中...' });
     setTimeout(() => {
       if (task) {
-        dispatch({ type: 'APPLY_REVIEW_RESULTS', payload: { taskId: task.id } });
+        dispatch({
+          type: 'APPLY_REVIEW_RESULTS',
+          payload: {
+            taskId: task.id,
+            handoverNote: handoverNote.trim() || undefined,
+            patientTip: patientTip.trim() || undefined,
+          }
+        });
       }
       Taro.hideLoading();
       Taro.showToast({
@@ -361,6 +370,34 @@ const ReviewDetailPage: React.FC = () => {
         <View className={classnames(styles.bannerItem, styles.bannerPending)}>
           <Text className={styles.bannerNum}>{pendingCount}</Text>
           <Text className={styles.bannerLabel}>待审</Text>
+        </View>
+      </View>
+
+      <View className={styles.noteSection}>
+        <View className={styles.noteField}>
+          <Text className={styles.noteLabel}>👩‍⚕️ 护士交接备注（内部给医生看）</Text>
+          <Textarea
+            className={styles.noteInput}
+            placeholder="填写本次复诊医生需要重点关注的内容，比如某张照片光线偏暗需现场重拍、患者牙齿移动进度等"
+            value={handoverNote}
+            onInput={(e) => setHandoverNote(e.detail.value)}
+            maxlength={300}
+            autoHeight
+          />
+          <Text className={styles.noteCount}>{handoverNote.length}/300</Text>
+        </View>
+
+        <View className={styles.noteField}>
+          <Text className={styles.noteLabel}>👤 给患者的提示</Text>
+          <Textarea
+            className={styles.noteInput}
+            placeholder="患者视角会显示这段提示，比如建议几点前完成重拍、下次复诊注意事项等"
+            value={patientTip}
+            onInput={(e) => setPatientTip(e.detail.value)}
+            maxlength={200}
+            autoHeight
+          />
+          <Text className={styles.noteCount}>{patientTip.length}/200</Text>
         </View>
       </View>
 

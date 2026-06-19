@@ -3,7 +3,7 @@ import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useApp } from '@/store';
-import { PhotoItem, PhotoTask, ReviewTask } from '@/types';
+import { ActionLog, PhotoItem, PhotoTask, ReviewTask } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import classnames from 'classnames';
 
@@ -83,6 +83,8 @@ const PhotoReportPage: React.FC = () => {
         reviewedAt: reviewTask.reviewedAt,
         reviewTaskId: reviewTask.id,
         overallNote: reviewTask.overallNote,
+        patientTip: reviewTask.patientTip,
+        actionLogs: reviewTask.actionLogs,
       };
     }
     return state.currentTask;
@@ -120,57 +122,62 @@ const PhotoReportPage: React.FC = () => {
     }
   }, [task.status, submittedCount, total]);
 
-  const timeline = useMemo(() => {
-    const items: { time: string; label: string; desc: string; type: 'done' | 'warn' | 'error' | 'next' }[] = [];
-    items.push({
-      time: task.appointmentDate + ' 之前',
-      label: '🎯 任务下发',
-      desc: `医生配置了 ${total} 张拍摄项目`,
-      type: 'done'
-    });
-    if (submittedCount > 0) {
-      items.push({
-        time: task.submittedAt || now,
-        label: '📸 照片上传',
-        desc: `患者上传了 ${submittedCount} 张照片${missingCountStr(submittedCount, total)}`,
-        type: approvedItems.length > 0 ? 'done' : rejectedItems.length > 0 ? 'error' : 'done'
-      });
+  const currentStage = useMemo(() => {
+    if (task.status === 'approved') {
+      return {
+        owner: 'doctor',
+        ownerName: '医生',
+        ownerIcon: '🦷',
+        ownerLabel: '目前在医生手里',
+        nextStep: '医生复诊当天会使用这些照片进行对比查看，请按时到诊。',
+        variant: 'doctor',
+      } as const;
     }
-    if (task.status === 'reviewing' || approvedItems.length > 0 || rejectedItems.length > 0) {
-      const reviewing = pendingReview.length;
-      items.push({
-        time: reviewTask?.reviewedAt || (reviewTask ? '进行中' : '等待开始'),
-        label: '🔍 护士核对',
-        desc: describeReview(approvedItems.length, rejectedItems.length, reviewing),
-        type: reviewing > 0 ? 'warn' : rejectedItems.length > 0 ? 'error' : 'done'
-      });
+    if (task.status === 'rejected' || rejectedItems.length > 0) {
+      return {
+        owner: 'patient',
+        ownerName: '患者',
+        ownerIcon: '🙋',
+        ownerLabel: '现在轮到您处理',
+        nextStep: `请尽快重新拍摄 ${rejectedItems.length} 张不合格的照片，完成后再次提交。`,
+        variant: 'patient',
+      } as const;
     }
-    if (task.status === 'approved' || (approvedItems.length === total && total > 0)) {
-      items.push({
-        time: task.reviewedAt || now,
-        label: '✅ 审核通过',
-        desc: '全部照片符合要求，医生复诊时可直接使用',
-        type: 'done'
-      });
+    if (task.status === 'reviewing' || pendingReview.length > 0) {
+      return {
+        owner: 'staff',
+        ownerName: '护士',
+        ownerIcon: '👩‍⚕️',
+        ownerLabel: '目前在护士手里',
+        nextStep: '护士正在核对照片，通常 30 分钟内会给出结果，请留意通知。',
+        variant: 'staff',
+      } as const;
     }
-    if (task.status === 'rejected' || (rejectedItems.length > 0)) {
-      items.push({
-        time: task.reviewedAt || '等待患者处理',
-        label: '♻️ 等待重拍',
-        desc: `有 ${rejectedItems.length} 张需要重拍，完成后可再次提交`,
-        type: 'next'
-      });
+    if (submittedCount > 0 && submittedCount < total) {
+      return {
+        owner: 'patient',
+        ownerName: '患者',
+        ownerIcon: '📸',
+        ownerLabel: '现在轮到您处理',
+        nextStep: `还有 ${total - submittedCount} 张未完成，继续拍摄后即可提交审核。`,
+        variant: 'patient',
+      } as const;
     }
-    if (task.status !== 'approved' && task.status !== 'rejected') {
-      items.push({
-        time: task.appointmentDate,
-        label: '🦷 复诊当天',
-        desc: '医生可调出自拍照与诊室补拍照对比查看',
-        type: 'next'
-      });
-    }
-    return items;
-  }, [task, submittedCount, total, approvedItems, rejectedItems, pendingReview, reviewTask, now]);
+    return {
+      owner: 'patient',
+      ownerName: '患者',
+      ownerIcon: '🎯',
+      ownerLabel: '等待开始拍摄',
+      nextStep: '请点击下方「继续拍摄」按引导完成所有项目。',
+      variant: 'patient',
+    } as const;
+  }, [task.status, rejectedItems.length, pendingReview.length, submittedCount, total]);
+
+  const actionLogs = useMemo<ActionLog[]>(() => {
+    const logs: ActionLog[] = task.actionLogs ? [...task.actionLogs] : [];
+    logs.sort((a, b) => a.time.localeCompare(b.time));
+    return logs;
+  }, [task.actionLogs]);
 
   function missingCountStr(s: number, t: number) {
     return s < t ? `，还有 ${t - s} 张未完成` : '';
@@ -360,6 +367,19 @@ const PhotoReportPage: React.FC = () => {
       </View>
 
       <ScrollView scrollY style={{ flex: 1 }}>
+        <View className={classnames(
+          styles.stageCard,
+          styles[`stage${currentStage.variant.charAt(0).toUpperCase() + currentStage.variant.slice(1)}`]
+        )}>
+          <View className={styles.stageLeft}>
+            <Text className={styles.stageIcon}>{currentStage.ownerIcon}</Text>
+          </View>
+          <View className={styles.stageContent}>
+            <Text className={styles.stageLabel}>{currentStage.ownerLabel}</Text>
+            <Text className={styles.stageNext}>下一步：{currentStage.nextStep}</Text>
+          </View>
+        </View>
+
         <View className={styles.photoSection}>
           <Text className={styles.sectionTitle}>
             📋 照片清单
@@ -371,23 +391,95 @@ const PhotoReportPage: React.FC = () => {
         </View>
 
         <View className={styles.timeline}>
-          <Text className={styles.tlTitle}>📈 流程时间轴</Text>
-          <View className={styles.tlList}>
-            {timeline.map((t, i) => (
-              <View key={i} className={classnames(styles.tlItem, styles[`item${t.type.charAt(0).toUpperCase() + t.type.slice(1)}`])}>
-                <Text className={styles.time}>{t.time}</Text>
-                <Text className={styles.label}>{t.label}</Text>
-                <Text className={styles.desc}>{t.desc}</Text>
-              </View>
-            ))}
-          </View>
+          <Text className={styles.tlTitle}>� 处理记录</Text>
+          {actionLogs.length > 0 ? (
+            <View className={styles.tlList}>
+              {actionLogs.map((log, i) => {
+                const isLast = i === actionLogs.length - 1;
+                return (
+                  <View
+                    key={log.id}
+                    className={classnames(
+                      styles.logItem,
+                      isLast && styles.logLast,
+                      styles[`logActor${log.actor.charAt(0).toUpperCase() + log.actor.slice(1)}`]
+                    )}
+                  >
+                    <View className={styles.logDot}>
+                      <View className={styles.dotInner} />
+                    </View>
+                    <View className={styles.logBody}>
+                      <View className={styles.logHead}>
+                        <Text className={styles.logTitle}>{log.title}</Text>
+                        <Text className={styles.logTime}>{log.time.slice(5)}</Text>
+                      </View>
+                      <Text className={styles.logDesc}>{log.description}</Text>
+                      {log.photoName && (
+                        <View className={styles.logMeta}>
+                          <Text className={styles.metaLabel}>照片</Text>
+                          <Text className={styles.metaValue}>{log.photoName}</Text>
+                        </View>
+                      )}
+                      {log.reasons && log.reasons.length > 0 && (
+                        <View className={styles.logReasons}>
+                          {log.reasons.map((r, ri) => (
+                            <Text key={ri} className={styles.reasonChip}>⚠️ {r}</Text>
+                          ))}
+                        </View>
+                      )}
+                      <Text className={styles.logActor}>
+                        {log.actor === 'patient' ? '👤 ' : log.actor === 'staff' ? '👩‍⚕️ ' : log.actor === 'doctor' ? '🦷 ' : '🤖 '}
+                        {log.actorName}
+                      </Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <View className={styles.logEmpty}>
+              <Text>暂无处理记录，提交任务后会实时更新</Text>
+            </View>
+          )}
         </View>
 
-        {task.overallNote && (
-          <View className={styles.doctorNote}>
-            <Text className={styles.noteTitle}>📝 护士整体备注</Text>
-            <Text className={styles.noteText}>{task.overallNote}</Text>
-          </View>
+        {from === 'staff' ? (
+          <>
+            {task.overallNote && (
+              <View className={styles.staffNote}>
+                <Text className={styles.noteTitle}>📝 护士交接备注（内部）</Text>
+                <Text className={styles.noteText}>{task.overallNote}</Text>
+              </View>
+            )}
+            {reviewTask?.handoverNote && reviewTask.handoverNote !== task.overallNote && (
+              <View className={styles.staffNote}>
+                <Text className={styles.noteTitle}>🧾 医生重点关注</Text>
+                <Text className={styles.noteText}>{reviewTask.handoverNote}</Text>
+              </View>
+            )}
+          </>
+        ) : (
+          <>
+            {task.patientTip && (
+              <View className={styles.patientTip}>
+                <Text className={styles.tipIcon}>💡</Text>
+                <Text className={styles.tipText}>{task.patientTip}</Text>
+              </View>
+            )}
+            {task.status === 'rejected' && rejectedItems.length > 0 && (
+              <View className={styles.patientTipWarn}>
+                <Text className={styles.tipIcon}>⚠️</Text>
+                <View className={styles.tipContent}>
+                  <Text className={styles.tipTitle}>不合格的 {rejectedItems.length} 张照片请尽快重拍</Text>
+                  {rejectedItems.map((it, i) => (
+                    <Text key={it.id} className={styles.tipRow}>
+                      · {it.name}：{it.rejectReason}
+                    </Text>
+                  ))}
+                </View>
+              </View>
+            )}
+          </>
         )}
       </ScrollView>
 

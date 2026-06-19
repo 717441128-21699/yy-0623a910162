@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { View, Text, Image, Slider, ScrollView } from '@tarojs/components';
 import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
-import { useApp } from '@/store';
+import { useApp, COMPARE_PARAMS_KEY, LastCompareParams } from '@/store';
 import { HistoryRecord } from '@/types';
 import classnames from 'classnames';
 
@@ -14,6 +14,18 @@ const getPhotoAt = (record: HistoryRecord | null, index: number): string => {
   return record.photos[index % record.photos.length];
 };
 
+const loadSavedParams = (): LastCompareParams => {
+  try {
+    const raw = Taro.getStorageSync(COMPARE_PARAMS_KEY);
+    if (raw && typeof raw === 'object') return raw as LastCompareParams;
+  } catch { /* ignore */ }
+  return {};
+};
+
+const saveParams = (p: LastCompareParams) => {
+  try { Taro.setStorageSync(COMPARE_PARAMS_KEY, p); } catch { /* ignore */ }
+};
+
 const ComparePage: React.FC = () => {
   const router = useRouter();
   const { state } = useApp();
@@ -23,65 +35,79 @@ const ComparePage: React.FC = () => {
   const leftIdParam = router.params.leftId || '';
   const rightIdParam = router.params.rightId || '';
 
-  const { defaultLeft, defaultRight, matchHint, matchType } = useMemo(() => {
+  const savedParams = useMemo(loadSavedParams, []);
+
+  const effectiveAppointmentId = appointmentId || savedParams.appointmentId || '';
+  const effectiveLeftId = leftIdParam || savedParams.leftId || '';
+  const effectiveRightId = rightIdParam || savedParams.rightId || '';
+
+  const { defaultLeft, defaultRight, matchHint } = useMemo(() => {
     let left: HistoryRecord | null = null;
     let right: HistoryRecord | null = null;
     let hint = '';
-    let mType: 'appointment' | 'explicit' | 'fallback' = 'fallback';
 
-    if (appointmentId) {
-      const group = records.filter(r => r.appointmentId === appointmentId);
+    if (effectiveAppointmentId) {
+      const group = records.filter(r => r.appointmentId === effectiveAppointmentId);
       const self = group.find(r => r.type === 'self_photo') || null;
       const clinic = group.find(r => r.type === 'clinic_photo') || null;
 
       if (self && clinic) {
         left = self;
         right = clinic;
-        mType = 'appointment';
-        hint = '已匹配本次复诊的自拍（左）与诊室拍摄（右）';
+        hint = `已匹配 ${effectiveAppointmentId.replace('apt-', '')} 本次复诊的自拍（左）与诊室拍摄（右）`;
       } else if (self && !clinic) {
         left = self;
-        const others = records.filter(r => r.type === 'clinic_photo');
-        right = others.length > 0 ? others[0] : null;
-        mType = 'appointment';
-        hint = '⚠️ 本次复诊暂无诊室拍摄，已用最近一次诊室拍摄对比';
+        right = null;
+        hint = `⚠️ 本次复诊暂无诊室拍摄记录，右侧留空，请选择其他日期对比`;
       } else if (!self && clinic) {
         right = clinic;
-        const others = records.filter(r => r.type === 'self_photo');
-        left = others.length > 0 ? others[0] : null;
-        mType = 'appointment';
-        hint = '⚠️ 本次复诊暂无自助拍照，已用最近一次自拍对比';
+        left = null;
+        hint = `⚠️ 本次复诊暂无自助拍照记录，左侧留空，请选择其他日期对比`;
       } else {
-        hint = '⚠️ 本次复诊尚未找到拍摄记录';
+        hint = `⚠️ 本次复诊尚未找到任何拍摄记录`;
       }
     }
 
-    if (leftIdParam) {
-      const r = records.find(x => x.id === leftIdParam);
-      if (r) { left = r; mType = 'explicit'; }
+    if (effectiveLeftId) {
+      const r = records.find(x => x.id === effectiveLeftId);
+      if (r) left = r;
     }
-    if (rightIdParam) {
-      const r = records.find(x => x.id === rightIdParam);
-      if (r) { right = r; mType = 'explicit'; }
-    }
-
-    if (!left && records.length > 0) {
-      left = records.length > 1 ? records[records.length - 1] : records[0];
-    }
-    if (!right && records.length > 0) {
-      right = records[0];
+    if (effectiveRightId) {
+      const r = records.find(x => x.id === effectiveRightId);
+      if (r) right = r;
     }
 
-    return { defaultLeft: left, defaultRight: right, matchHint: hint, matchType: mType };
-  }, [records, appointmentId, leftIdParam, rightIdParam]);
+    if (!effectiveAppointmentId && !effectiveLeftId && !effectiveRightId) {
+      if (records.length >= 2) {
+        left = records[records.length - 1];
+        right = records[records.length - 2];
+      } else if (records.length === 1) {
+        left = records[0];
+        right = null;
+        hint = `⚠️ 历史记录不足，请增加更多拍摄后再对比`;
+      } else {
+        hint = `⚠️ 暂无任何历史记录，完成第一次拍摄后可在此对比`;
+      }
+    }
+
+    return { defaultLeft: left, defaultRight: right, matchHint: hint };
+  }, [records, effectiveAppointmentId, effectiveLeftId, effectiveRightId]);
 
   const [leftRecord, setLeftRecord] = useState<HistoryRecord | null>(defaultLeft);
   const [rightRecord, setRightRecord] = useState<HistoryRecord | null>(defaultRight);
   const [activePhotoType, setActivePhotoType] = useState<number>(0);
   const [sliderValue, setSliderValue] = useState(50);
 
-  const safeLeft = leftRecord || defaultLeft;
-  const safeRight = rightRecord || defaultRight;
+  useEffect(() => {
+    saveParams({
+      appointmentId: effectiveAppointmentId || undefined,
+      leftId: leftRecord?.id || undefined,
+      rightId: rightRecord?.id || undefined,
+    });
+  }, [effectiveAppointmentId, leftRecord, rightRecord]);
+
+  const safeLeft = leftRecord;
+  const safeRight = rightRecord;
 
   const leftPhoto = useMemo(() => getPhotoAt(safeLeft, activePhotoType), [safeLeft, activePhotoType]);
   const rightPhoto = useMemo(() => getPhotoAt(safeRight, activePhotoType), [safeRight, activePhotoType]);

@@ -1,3 +1,26 @@
+// 处理日志类型，记录报告页时间线
+export type ActionLogType =
+  | 'task_created'      // 任务下发
+  | 'patient_upload'    // 患者上传单张
+  | 'patient_submit'    // 患者提交审核
+  | 'patient_retake'    // 患者重拍
+  | 'staff_approve'     // 护士通过单张
+  | 'staff_reject'      // 护士打回单张
+  | 'staff_submit'      // 护士提交核对结果
+  | 'doctor_note';      // 医生备注
+
+export interface ActionLog {
+  id: string;
+  type: ActionLogType;
+  time: string;
+  actor: 'patient' | 'staff' | 'doctor' | 'system';
+  actorName: string;
+  title: string;
+  description: string;
+  photoName?: string;
+  reasons?: string[];
+}
+
 // 拍照项目类型
 export interface PhotoItem {
   id: string;
@@ -30,6 +53,8 @@ export interface PhotoTask {
   reviewedAt?: string;
   reviewTaskId?: string;
   overallNote?: string;
+  actionLogs?: ActionLog[];
+  patientTip?: string;
 }
 
 // 历史记录类型
@@ -69,6 +94,9 @@ export interface ReviewTask {
   reviewedAt?: string;
   reviewedBy?: string;
   overallNote?: string;
+  handoverNote?: string;
+  patientTip?: string;
+  actionLogs?: ActionLog[];
 }
 
 export interface ReviewPhoto {
