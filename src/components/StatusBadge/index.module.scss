@@ -1,0 +1,55 @@
+@use '@/styles/variables.scss' as *;
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4rpx 16rpx;
+  border-radius: $radius-round;
+  background: $color-primary-bg;
+
+  .text {
+    font-size: $font-size-xs;
+    line-height: 1.4;
+    color: $color-primary;
+    font-weight: $font-weight-medium;
+  }
+
+  &.medium {
+    padding: 8rpx 20rpx;
+
+    .text {
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+.statusPending {
+  background: $color-warning-bg;
+  .text { color: $color-warning; }
+}
+
+.statusInProgress {
+  background: $color-primary-bg;
+  .text { color: $color-primary; }
+}
+
+.statusSubmitted {
+  background: $color-info-bg;
+  .text { color: $color-info; }
+}
+
+.statusReviewing {
+  background: $color-warning-bg;
+  .text { color: $color-warning; }
+}
+
+.statusApproved {
+  background: $color-success-bg;
+  .text { color: $color-success; }
+}
+
+.statusRejected {
+  background: $color-error-bg;
+  .text { color: $color-error; }
+}

@@ -1,0 +1,284 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 40rpx;
+}
+
+.selector {
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  display: flex;
+  gap: $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+
+  .selectorItem {
+    flex: 1;
+    padding: $spacing-md;
+    background: $color-bg-section;
+    border-radius: $radius-md;
+    text-align: center;
+
+    .label {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+      margin-bottom: $spacing-xs;
+    }
+
+    .value {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      font-weight: $font-weight-medium;
+      @include text-ellipsis;
+    }
+
+    &:active {
+      opacity: 0.8;
+    }
+  }
+}
+
+.photoTypeTab {
+  display: flex;
+  background: $color-bg-card;
+  padding: 0 $spacing-md;
+  border-bottom: 1rpx solid $color-divider;
+
+  .tabItem {
+    flex: 1;
+    text-align: center;
+    padding: $spacing-md 0;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    position: relative;
+
+    &.active {
+      color: $color-primary;
+      font-weight: $font-weight-semibold;
+
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 40rpx;
+        height: 4rpx;
+        background: $color-primary;
+        border-radius: 2rpx;
+      }
+    }
+  }
+}
+
+.compareSection {
+  padding: $spacing-lg $page-padding;
+}
+
+.compareGrid {
+  display: flex;
+  gap: $spacing-md;
+  margin-bottom: $spacing-lg;
+
+  .compareItem {
+    flex: 1;
+
+    .itemHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-sm;
+
+      .itemLabel {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-medium;
+        color: $color-text-primary;
+      }
+
+      .itemDate {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+
+    .photoWrapper {
+      width: 100%;
+      height: 280rpx;
+      border-radius: $radius-md;
+      overflow: hidden;
+      background: $color-bg-card;
+      box-shadow: $shadow-card;
+
+      .photo {
+        width: 100%;
+        height: 100%;
+      }
+    }
+  }
+}
+
+.sliderSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+  margin-bottom: $spacing-lg;
+
+  .sliderTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-md;
+    text-align: center;
+  }
+
+  .sliderContainer {
+    position: relative;
+    width: 100%;
+    height: 400rpx;
+    border-radius: $radius-md;
+    overflow: hidden;
+    margin-bottom: $spacing-md;
+
+    .photoBase {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+
+    .photoOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 50%;
+      height: 100%;
+      overflow: hidden;
+
+      .overlayImg {
+        width: 200%;
+        height: 100%;
+      }
+    }
+
+    .sliderLine {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 50%;
+      width: 4rpx;
+      background: $color-primary;
+      transform: translateX(-50%);
+
+      .sliderHandle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 56rpx;
+        height: 56rpx;
+        border-radius: $radius-round;
+        background: $color-primary;
+        box-shadow: 0 4rpx 12rpx rgba(45, 127, 249, 0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .handleIcon {
+          color: $color-text-white;
+          font-size: 28rpx;
+        }
+      }
+    }
+  }
+
+  .sliderHint {
+    text-align: center;
+    font-size: $font-size-xs;
+    color: $color-text-tertiary;
+  }
+}
+
+.infoSection {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  box-shadow: $shadow-card;
+
+  .infoTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-md;
+  }
+
+  .infoItem {
+    display: flex;
+    justify-content: space-between;
+    padding: $spacing-sm 0;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .infoLabel {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+    }
+
+    .infoValue {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .doctorNote {
+    margin-top: $spacing-md;
+    padding: $spacing-md;
+    background: $color-primary-bg;
+    border-radius: $radius-md;
+
+    .noteLabel {
+      font-size: $font-size-xs;
+      color: $color-primary;
+      font-weight: $font-weight-medium;
+      margin-bottom: $spacing-xs;
+    }
+
+    .noteText {
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      line-height: 1.6;
+    }
+  }
+}
+
+.reminderSection {
+  margin-top: $spacing-lg;
+  background: linear-gradient(135deg, $color-warning 0%, #FCD34D 100%);
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+
+  .reminderTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-white;
+    margin-bottom: $spacing-sm;
+    display: flex;
+    align-items: center;
+
+    .reminderIcon {
+      margin-right: $spacing-xs;
+    }
+  }
+
+  .reminderText {
+    font-size: $font-size-sm;
+    color: rgba(255, 255, 255, 0.95);
+    line-height: 1.6;
+  }
+}

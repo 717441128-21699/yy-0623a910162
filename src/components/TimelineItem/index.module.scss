@@ -1,0 +1,130 @@
+@use '@/styles/variables.scss' as *;
+
+.item {
+  position: relative;
+  padding-left: 80rpx;
+  padding-bottom: $spacing-xl;
+
+  &.lastItem {
+    padding-bottom: 0;
+
+    .timelineLine {
+      display: none;
+    }
+  }
+
+  .timelineLine {
+    position: absolute;
+    left: 23rpx;
+    top: 40rpx;
+    bottom: 0;
+    width: 2rpx;
+    background: $color-border;
+  }
+
+  .dot {
+    position: absolute;
+    left: 8rpx;
+    top: 0;
+    width: 32rpx;
+    height: 32rpx;
+    border-radius: $radius-round;
+    background: $color-bg-card;
+    border: 4rpx solid $color-primary;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .dotInner {
+      width: 12rpx;
+      height: 12rpx;
+      border-radius: $radius-round;
+      background: $color-primary;
+    }
+
+    &.dotClinic {
+      border-color: $color-success;
+      .dotInner {
+        background: $color-success;
+      }
+    }
+  }
+
+  .content {
+    background: $color-bg-card;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    box-shadow: $shadow-card;
+
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-sm;
+
+      .date {
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+      }
+
+      .typeTag {
+        padding: 4rpx 16rpx;
+        border-radius: $radius-round;
+        background: $color-primary-bg;
+
+        .typeText {
+          font-size: $font-size-xs;
+          color: $color-primary;
+          font-weight: $font-weight-medium;
+        }
+
+        &.typeClinic {
+          background: $color-success-bg;
+          .typeText {
+            color: $color-success;
+          }
+        }
+      }
+    }
+
+    .description {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      line-height: 1.5;
+      margin-bottom: $spacing-md;
+    }
+
+    .photos {
+      display: flex;
+      gap: $spacing-sm;
+      flex-wrap: wrap;
+      margin-bottom: $spacing-md;
+
+      .photo {
+        width: calc((100% - 32rpx * 4) / 5);
+        height: 110rpx;
+        border-radius: $radius-sm;
+      }
+    }
+
+    .doctorNote {
+      padding: $spacing-md;
+      background: $color-bg-section;
+      border-radius: $radius-md;
+
+      .noteLabel {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        display: block;
+        margin-bottom: $spacing-xs;
+      }
+
+      .noteText {
+        font-size: $font-size-sm;
+        color: $color-text-primary;
+        line-height: 1.5;
+      }
+    }
+  }
+}

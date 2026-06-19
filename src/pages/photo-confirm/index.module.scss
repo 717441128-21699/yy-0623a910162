@@ -1,0 +1,181 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 140rpx;
+}
+
+.photoSection {
+  background: $color-bg-card;
+  padding: $spacing-lg;
+
+  .photoTitle {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    text-align: center;
+    margin-bottom: $spacing-md;
+  }
+
+  .photoWrapper {
+    position: relative;
+    width: 100%;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    background: $color-bg-section;
+
+    .photo {
+      width: 100%;
+      height: 500rpx;
+      display: block;
+    }
+  }
+}
+
+.checkSection {
+  padding: $spacing-lg $page-padding;
+
+  .sectionTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-md;
+  }
+
+  .checkList {
+    background: $color-bg-card;
+    border-radius: $radius-lg;
+    overflow: hidden;
+    box-shadow: $shadow-card;
+  }
+
+  .checkItem {
+    display: flex;
+    align-items: center;
+    padding: $spacing-lg;
+    border-bottom: 1rpx solid $color-divider;
+
+    &:last-child {
+      border-bottom: none;
+    }
+
+    .checkIcon {
+      width: 48rpx;
+      height: 48rpx;
+      border-radius: $radius-round;
+      border: 3rpx solid $color-border;
+      margin-right: $spacing-md;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: all $transition-fast;
+
+      &.checked {
+        background: $color-success;
+        border-color: $color-success;
+
+        .iconText {
+          color: $color-text-white;
+        }
+      }
+
+      .iconText {
+        font-size: $font-size-sm;
+        color: $color-text-tertiary;
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    .checkContent {
+      flex: 1;
+
+      .checkLabel {
+        font-size: $font-size-md;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+      }
+
+      .checkDesc {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+    }
+  }
+}
+
+.tipsSection {
+  padding: 0 $page-padding;
+  margin-top: $spacing-lg;
+
+  .tipsCard {
+    background: $color-warning-bg;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+
+    .tipsTitle {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-warning;
+      margin-bottom: $spacing-sm;
+      display: flex;
+      align-items: center;
+
+      .tipsIcon {
+        font-size: $font-size-md;
+        margin-right: $spacing-xs;
+      }
+    }
+
+    .tipsContent {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      line-height: 1.6;
+    }
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-md;
+
+  .btn {
+    flex: 1;
+    height: $button-height-lg;
+    border-radius: $radius-button;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-md;
+    font-weight: $font-weight-medium;
+    transition: all $transition-fast;
+
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.98);
+    }
+
+    &.secondary {
+      background: $color-bg-section;
+      color: $color-text-secondary;
+    }
+
+    &.primary {
+      background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+      color: $color-text-white;
+
+      &:disabled {
+        opacity: 0.5;
+      }
+    }
+  }
+}

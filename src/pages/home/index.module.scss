@@ -1,0 +1,241 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: linear-gradient(180deg, $color-primary 0%, rgba(45, 127, 249, 0.1) 300rpx, $color-bg-page 500rpx);
+  padding: 0 $page-padding;
+  padding-bottom: 40rpx;
+}
+
+.userCard {
+  margin-top: $spacing-lg;
+  margin-bottom: $spacing-xl;
+  display: flex;
+  align-items: center;
+
+  .avatar {
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: $radius-round;
+    border: 4rpx solid rgba(255, 255, 255, 0.5);
+    margin-right: $spacing-md;
+  }
+
+  .info {
+    flex: 1;
+
+    .name {
+      font-size: $font-size-xl;
+      font-weight: $font-weight-semibold;
+      color: $color-text-white;
+      margin-bottom: $spacing-xs;
+    }
+
+    .stage {
+      font-size: $font-size-sm;
+      color: rgba(255, 255, 255, 0.8);
+    }
+  }
+}
+
+.appointmentCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-xl;
+  box-shadow: $shadow-card;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .left {
+    .label {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+      margin-bottom: $spacing-xs;
+    }
+
+    .date {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-xs;
+    }
+
+    .countdown {
+      font-size: $font-size-xs;
+      color: $color-primary;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .right {
+    .icon {
+      font-size: 64rpx;
+    }
+  }
+}
+
+.sectionTitle {
+  font-size: $font-size-lg;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+}
+
+.entryCard {
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+    box-shadow: 0 1rpx 6rpx rgba(0, 0, 0, 0.06);
+  }
+
+  &.primary {
+    background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+    color: $color-text-white;
+
+    .cardTitle {
+      color: $color-text-white;
+    }
+
+    .cardDesc {
+      color: rgba(255, 255, 255, 0.8);
+    }
+
+    .cardIcon {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  }
+
+  .cardHeader {
+    display: flex;
+    align-items: center;
+    margin-bottom: $spacing-md;
+
+    .cardIcon {
+      width: 80rpx;
+      height: 80rpx;
+      border-radius: $radius-md;
+      background: $color-primary-bg;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-right: $spacing-md;
+      font-size: 40rpx;
+    }
+
+    .cardTitle {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+    }
+  }
+
+  .cardDesc {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    line-height: 1.5;
+    margin-bottom: $spacing-md;
+  }
+
+  .cardFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .progressInfo {
+      .progressBar {
+        width: 300rpx;
+        height: 8rpx;
+        background: rgba(255, 255, 255, 0.3);
+        border-radius: $radius-round;
+        overflow: hidden;
+        margin-bottom: $spacing-xs;
+
+        .progressFill {
+          height: 100%;
+          background: $color-text-white;
+          border-radius: $radius-round;
+        }
+      }
+
+      .progressText {
+        font-size: $font-size-xs;
+        color: rgba(255, 255, 255, 0.8);
+      }
+    }
+
+    .goBtn {
+      padding: $spacing-sm $spacing-lg;
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: $radius-button;
+      font-size: $font-size-sm;
+      color: $color-text-white;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .secondaryFooter {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+
+    .hintText {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+    }
+
+    .goText {
+      font-size: $font-size-sm;
+      color: $color-primary;
+      font-weight: $font-weight-medium;
+    }
+  }
+}
+
+.tipsSection {
+  margin-top: $spacing-xl;
+
+  .tipsCard {
+    background: $color-bg-card;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    box-shadow: $shadow-card;
+
+    .tipsTitle {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-md;
+    }
+
+    .tipItem {
+      display: flex;
+      align-items: flex-start;
+      margin-bottom: $spacing-sm;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      .tipIcon {
+        font-size: $font-size-md;
+        margin-right: $spacing-sm;
+        margin-top: 2rpx;
+      }
+
+      .tipText {
+        flex: 1;
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+        line-height: 1.6;
+      }
+    }
+  }
+}

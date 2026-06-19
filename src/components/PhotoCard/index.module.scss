@@ -1,0 +1,82 @@
+@use '@/styles/variables.scss' as *;
+
+.card {
+  position: relative;
+  width: 100%;
+  border-radius: $radius-md;
+  overflow: hidden;
+  background: $color-bg-card;
+  transition: all $transition-base;
+
+  &:active {
+    opacity: 0.9;
+    transform: scale(0.98);
+  }
+
+  .image {
+    width: 100%;
+    height: 200rpx;
+    display: block;
+  }
+
+  .titleContainer {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 12rpx 16rpx;
+    background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%);
+
+    .title {
+      font-size: $font-size-xs;
+      color: $color-text-white;
+      line-height: 1.4;
+    }
+  }
+
+  .checkIcon {
+    position: absolute;
+    top: 12rpx;
+    right: 12rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: $radius-round;
+    background: $color-success;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .checkText {
+      color: $color-text-white;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-bold;
+    }
+  }
+
+  .errorIcon {
+    position: absolute;
+    top: 12rpx;
+    right: 12rpx;
+    width: 40rpx;
+    height: 40rpx;
+    border-radius: $radius-round;
+    background: $color-error;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    .errorText {
+      color: $color-text-white;
+      font-size: $font-size-sm;
+      font-weight: $font-weight-bold;
+    }
+  }
+
+  &.selected {
+    border: 4rpx solid $color-success;
+  }
+
+  &.error {
+    border: 4rpx solid $color-error;
+  }
+}

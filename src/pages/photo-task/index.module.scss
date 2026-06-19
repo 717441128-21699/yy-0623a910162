@@ -1,0 +1,213 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 140rpx;
+}
+
+.header {
+  background: $color-bg-card;
+  padding: $spacing-lg $page-padding;
+  margin-bottom: $spacing-md;
+
+  .taskTitle {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+  }
+
+  .taskMeta {
+    display: flex;
+    gap: $spacing-lg;
+    margin-bottom: $spacing-lg;
+
+    .metaItem {
+      font-size: $font-size-sm;
+      color: $color-text-secondary;
+
+      .metaLabel {
+        color: $color-text-tertiary;
+        margin-right: $spacing-xs;
+      }
+    }
+  }
+
+  .progressSection {
+    .progressHeader {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: $spacing-sm;
+
+      .progressLabel {
+        font-size: $font-size-sm;
+        color: $color-text-secondary;
+      }
+
+      .progressNum {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-primary;
+      }
+    }
+
+    .progressBar {
+      height: 16rpx;
+      background: $color-bg-section;
+      border-radius: $radius-round;
+      overflow: hidden;
+
+      .progressFill {
+        height: 100%;
+        background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+        border-radius: $radius-round;
+        transition: width $transition-base;
+      }
+    }
+  }
+}
+
+.photoList {
+  padding: 0 $page-padding;
+}
+
+.listTitle {
+  font-size: $font-size-md;
+  font-weight: $font-weight-semibold;
+  color: $color-text-primary;
+  margin-bottom: $spacing-md;
+  padding-left: $spacing-xs;
+}
+
+.photoItem {
+  display: flex;
+  align-items: center;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  padding: $spacing-md;
+  margin-bottom: $spacing-md;
+  box-shadow: $shadow-card;
+  transition: all $transition-base;
+
+  &:active {
+    transform: scale(0.99);
+  }
+
+  .photoPreview {
+    width: 120rpx;
+    height: 120rpx;
+    border-radius: $radius-md;
+    margin-right: $spacing-md;
+    flex-shrink: 0;
+    background: $color-bg-section;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+
+    .previewImg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .placeholderIcon {
+      font-size: 48rpx;
+    }
+
+    .statusOverlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      .statusText {
+        font-size: $font-size-xs;
+        color: $color-text-white;
+        font-weight: $font-weight-medium;
+      }
+    }
+  }
+
+  .photoInfo {
+    flex: 1;
+    min-width: 0;
+
+    .photoName {
+      font-size: $font-size-md;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-xs;
+    }
+
+    .photoDesc {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+      line-height: 1.4;
+      @include text-ellipsis-multi(2);
+    }
+  }
+
+  .actionBtn {
+    flex-shrink: 0;
+    padding: $spacing-sm $spacing-lg;
+    border-radius: $radius-button;
+    font-size: $font-size-sm;
+    font-weight: $font-weight-medium;
+
+    &.primary {
+      background: $color-primary;
+      color: $color-text-white;
+    }
+
+    &.secondary {
+      background: $color-bg-section;
+      color: $color-text-secondary;
+    }
+
+    &.warning {
+      background: $color-warning-bg;
+      color: $color-warning;
+    }
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+
+  .submitBtn {
+    width: 100%;
+    height: $button-height-lg;
+    border-radius: $radius-button;
+    background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-white;
+
+    &:disabled {
+      opacity: 0.5;
+    }
+
+    &:active {
+      opacity: 0.9;
+      transform: scale(0.99);
+    }
+  }
+}
