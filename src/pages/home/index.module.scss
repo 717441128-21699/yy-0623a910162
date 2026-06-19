@@ -36,6 +36,15 @@
       color: rgba(255, 255, 255, 0.8);
     }
   }
+
+  .patientIdTag {
+    padding: $spacing-xs $spacing-sm;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: $radius-round;
+    font-size: $font-size-xs;
+    color: $color-text-white;
+    font-weight: $font-weight-medium;
+  }
 }
 
 .appointmentCard {
@@ -66,6 +75,11 @@
       font-size: $font-size-xs;
       color: $color-primary;
       font-weight: $font-weight-medium;
+
+      &.urgent {
+        color: $color-error;
+        font-weight: $font-weight-semibold;
+      }
     }
   }
 
@@ -105,7 +119,7 @@
     }
 
     .cardDesc {
-      color: rgba(255, 255, 255, 0.8);
+      color: rgba(255, 255, 255, 0.85);
     }
 
     .cardIcon {
@@ -113,10 +127,15 @@
     }
   }
 
+  &.cardRejected {
+    background: linear-gradient(135deg, $color-error 0%, #FF6B6B 100%);
+  }
+
   .cardHeader {
     display: flex;
     align-items: center;
     margin-bottom: $spacing-md;
+    gap: $spacing-md;
 
     .cardIcon {
       width: 80rpx;
@@ -126,14 +145,48 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-right: $spacing-md;
       font-size: 40rpx;
+      flex-shrink: 0;
+
+      &.iconHistory {
+        background: rgba(52, 211, 153, 0.12);
+      }
     }
 
     .cardTitle {
+      flex: 1;
       font-size: $font-size-lg;
       font-weight: $font-weight-semibold;
       color: $color-text-primary;
+    }
+
+    .tag {
+      flex-shrink: 0;
+      padding: 6rpx 16rpx;
+      border-radius: $radius-round;
+      font-size: $font-size-xs;
+      font-weight: $font-weight-medium;
+
+      &.tagReviewing {
+        background: $color-info-bg;
+        color: $color-primary;
+      }
+      &.tagApproved {
+        background: $color-success-bg;
+        color: $color-success;
+      }
+      &.tagRejected {
+        background: rgba(255, 255, 255, 0.25);
+        color: $color-text-white;
+      }
+      &.tagPending {
+        background: rgba(255, 255, 255, 0.2);
+        color: $color-text-white;
+      }
+      &.tagProgress {
+        background: rgba(255, 255, 255, 0.25);
+        color: $color-text-white;
+      }
     }
   }
 
@@ -167,7 +220,7 @@
 
       .progressText {
         font-size: $font-size-xs;
-        color: rgba(255, 255, 255, 0.8);
+        color: rgba(255, 255, 255, 0.85);
       }
     }
 

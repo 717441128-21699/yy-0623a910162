@@ -4,12 +4,14 @@ import Taro from '@tarojs/taro';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { photoItems } from '@/data/photoTasks';
+import { useApp } from '@/store';
 import classnames from 'classnames';
 
 const PhotoConfirmPage: React.FC = () => {
   const router = useRouter();
   const itemId = router.params.itemId || '1';
   const photoUrl = decodeURIComponent(router.params.photoUrl || '');
+  const { dispatch } = useApp();
 
   const photoItem = useMemo(() => {
     return photoItems.find(item => item.id === itemId) || photoItems[0];
@@ -21,7 +23,6 @@ const PhotoConfirmPage: React.FC = () => {
   const canSubmit = isClear && hasMolar;
 
   const handleRetake = () => {
-    console.log('[PhotoConfirm] 重新拍照');
     Taro.navigateBack();
   };
 
@@ -34,10 +35,16 @@ const PhotoConfirmPage: React.FC = () => {
       return;
     }
 
-    console.log('[PhotoConfirm] 确认提交照片');
-    Taro.showLoading({ title: '上传中...' });
+    const finalPhoto = photoUrl || photoItem.exampleImage;
+
+    Taro.showLoading({ title: '保存中...' });
 
     setTimeout(() => {
+      dispatch({
+        type: 'UPDATE_PHOTO',
+        payload: { itemId, photoUrl: finalPhoto }
+      });
+
       Taro.hideLoading();
       Taro.showToast({
         title: '照片已保存',
@@ -45,43 +52,32 @@ const PhotoConfirmPage: React.FC = () => {
       });
 
       setTimeout(() => {
-        Taro.navigateBack({ delta: 2 });
-      }, 1500);
-    }, 1500);
+        Taro.navigateBack();
+      }, 1200);
+    }, 800);
   };
 
-  const toggleClear = () => {
-    setIsClear(!isClear);
-  };
+  const toggleClear = () => setIsClear(!isClear);
+  const toggleMolar = () => setHasMolar(!hasMolar);
 
-  const toggleMolar = () => {
-    setHasMolar(!hasMolar);
-  };
+  const displayPhoto = photoUrl || photoItem.exampleImage;
 
   return (
     <View className={styles.container}>
       <View className={styles.photoSection}>
         <Text className={styles.photoTitle}>{photoItem.name}</Text>
         <View className={styles.photoWrapper}>
-          {photoUrl ? (
-            <Image
-              className={styles.photo}
-              src={photoUrl}
-              mode="aspectFit"
-              onClick={() => {
-                Taro.previewImage({
-                  urls: [photoUrl],
-                  current: photoUrl
-                });
-              }}
-            />
-          ) : (
-            <Image
-              className={styles.photo}
-              src={photoItem.exampleImage}
-              mode="aspectFit"
-            />
-          )}
+          <Image
+            className={styles.photo}
+            src={displayPhoto}
+            mode="aspectFit"
+            onClick={() => {
+              Taro.previewImage({
+                urls: [displayPhoto],
+                current: displayPhoto
+              });
+            }}
+          />
         </View>
       </View>
 
@@ -128,10 +124,10 @@ const PhotoConfirmPage: React.FC = () => {
           <Text>重新拍摄</Text>
         </View>
         <View
-          className={classnames(styles.btn, styles.primary)}
+          className={classnames(styles.btn, styles.primary, !canSubmit && styles.disabled)}
           onClick={handleSubmit}
         >
-          <Text>确认并继续</Text>
+          <Text>{canSubmit ? '确认并继续' : '请完成两项确认'}</Text>
         </View>
       </View>
     </View>

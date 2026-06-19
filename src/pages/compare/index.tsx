@@ -1,45 +1,61 @@
-import React, { useState } from 'react';
-import { View, Text, Image, Slider } from '@tarojs/components';
+import React, { useState, useMemo } from 'react';
+import { View, Text, Image, Slider, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { historyRecords } from '@/data/historyRecords';
+import { useApp } from '@/store';
 import { HistoryRecord } from '@/types';
 import classnames from 'classnames';
 
+const photoTypes = ['正面咬合照', '左侧咬合照', '右侧咬合照', '上牙弓照', '下牙弓照'];
+const PLACEHOLDER = 'https://picsum.photos/id/64/600/600';
+
+const getPhotoAt = (record: HistoryRecord, index: number): string => {
+  if (!record || !record.photos || record.photos.length === 0) return PLACEHOLDER;
+  return record.photos[index % record.photos.length];
+};
+
 const ComparePage: React.FC = () => {
-  const [leftRecord, setLeftRecord] = useState<HistoryRecord>(historyRecords[historyRecords.length - 1]);
-  const [rightRecord, setRightRecord] = useState<HistoryRecord>(historyRecords[0]);
+  const { state } = useApp();
+  const records = state.historyRecords;
+
+  const defaultLeft = records.length > 1 ? records[records.length - 1] : records[0];
+  const defaultRight = records[0];
+
+  const [leftRecord, setLeftRecord] = useState<HistoryRecord>(defaultLeft);
+  const [rightRecord, setRightRecord] = useState<HistoryRecord>(defaultRight);
   const [activePhotoType, setActivePhotoType] = useState<number>(0);
   const [sliderValue, setSliderValue] = useState(50);
 
-  const photoTypes = ['正面咬合照', '左侧咬合照', '右侧咬合照', '上牙弓照', '下牙弓照'];
+  const safeLeft = leftRecord || defaultLeft;
+  const safeRight = rightRecord || defaultRight;
 
-  const leftPhoto = leftRecord.photos[activePhotoType] || leftRecord.photos[0];
-  const rightPhoto = rightRecord.photos[activePhotoType] || rightRecord.photos[0];
+  const leftPhoto = useMemo(() => getPhotoAt(safeLeft, activePhotoType), [safeLeft, activePhotoType]);
+  const rightPhoto = useMemo(() => getPhotoAt(safeRight, activePhotoType), [safeRight, activePhotoType]);
 
   const handleLeftSelect = () => {
-    console.log('[Compare] 选择左侧照片');
+    if (records.length === 0) return;
     Taro.showActionSheet({
-      itemList: historyRecords.map(r => `${r.date} ${r.typeLabel}`),
+      itemList: records.map(r => `${r.date} ${r.typeLabel}`),
       success: (res) => {
-        setLeftRecord(historyRecords[res.tapIndex]);
+        const rec = records[res.tapIndex];
+        if (rec) setLeftRecord(rec);
       }
     });
   };
 
   const handleRightSelect = () => {
-    console.log('[Compare] 选择右侧照片');
+    if (records.length === 0) return;
     Taro.showActionSheet({
-      itemList: historyRecords.map(r => `${r.date} ${r.typeLabel}`),
+      itemList: records.map(r => `${r.date} ${r.typeLabel}`),
       success: (res) => {
-        setRightRecord(historyRecords[res.tapIndex]);
+        const rec = records[res.tapIndex];
+        if (rec) setRightRecord(rec);
       }
     });
   };
 
   const handlePhotoTypeChange = (index: number) => {
     setActivePhotoType(index);
-    console.log(`[Compare] 切换照片类型: ${photoTypes[index]}`);
   };
 
   const handleSliderChange = (e: any) => {
@@ -47,17 +63,25 @@ const ComparePage: React.FC = () => {
   };
 
   const handlePreviewLeft = () => {
-    Taro.previewImage({
-      urls: leftRecord.photos,
-      current: leftPhoto
-    });
+    const urls = safeLeft.photos?.length ? safeLeft.photos : [PLACEHOLDER];
+    Taro.previewImage({ urls, current: leftPhoto });
   };
 
   const handlePreviewRight = () => {
-    Taro.previewImage({
-      urls: rightRecord.photos,
-      current: rightPhoto
-    });
+    const urls = safeRight.photos?.length ? safeRight.photos : [PLACEHOLDER];
+    Taro.previewImage({ urls, current: rightPhoto });
+  };
+
+  const calcInterval = (a: HistoryRecord, b: HistoryRecord) => {
+    try {
+      const d1 = new Date(a.date);
+      const d2 = new Date(b.date);
+      const diff = Math.abs(d2.getTime() - d1.getTime());
+      const months = Math.round(diff / (1000 * 60 * 60 * 24 * 30));
+      return months > 0 ? `约 ${months} 个月` : '不足 1 个月';
+    } catch {
+      return '—';
+    }
   };
 
   return (
@@ -65,11 +89,13 @@ const ComparePage: React.FC = () => {
       <View className={styles.selector}>
         <View className={styles.selectorItem} onClick={handleLeftSelect}>
           <Text className={styles.label}>对比前</Text>
-          <Text className={styles.value}>{leftRecord.date}</Text>
+          <Text className={styles.value}>{safeLeft.date}</Text>
+          <Text className={styles.subLabel}>{safeLeft.typeLabel}</Text>
         </View>
         <View className={styles.selectorItem} onClick={handleRightSelect}>
           <Text className={styles.label}>对比后</Text>
-          <Text className={styles.value}>{rightRecord.date}</Text>
+          <Text className={styles.value}>{safeRight.date}</Text>
+          <Text className={styles.subLabel}>{safeRight.typeLabel}</Text>
         </View>
       </View>
 
@@ -89,29 +115,21 @@ const ComparePage: React.FC = () => {
         <View className={styles.compareGrid}>
           <View className={styles.compareItem}>
             <View className={styles.itemHeader}>
-              <Text className={styles.itemLabel}>{leftRecord.typeLabel}</Text>
-              <Text className={styles.itemDate}>{leftRecord.date}</Text>
+              <Text className={styles.itemLabel}>{safeLeft.typeLabel}</Text>
+              <Text className={styles.itemDate}>{safeLeft.date}</Text>
             </View>
             <View className={styles.photoWrapper} onClick={handlePreviewLeft}>
-              <Image
-                className={styles.photo}
-                src={leftPhoto}
-                mode="aspectFill"
-              />
+              <Image className={styles.photo} src={leftPhoto} mode="aspectFill" />
             </View>
           </View>
 
           <View className={styles.compareItem}>
             <View className={styles.itemHeader}>
-              <Text className={styles.itemLabel}>{rightRecord.typeLabel}</Text>
-              <Text className={styles.itemDate}>{rightRecord.date}</Text>
+              <Text className={styles.itemLabel}>{safeRight.typeLabel}</Text>
+              <Text className={styles.itemDate}>{safeRight.date}</Text>
             </View>
             <View className={styles.photoWrapper} onClick={handlePreviewRight}>
-              <Image
-                className={styles.photo}
-                src={rightPhoto}
-                mode="aspectFill"
-              />
+              <Image className={styles.photo} src={rightPhoto} mode="aspectFill" />
             </View>
           </View>
         </View>
@@ -119,25 +137,11 @@ const ComparePage: React.FC = () => {
         <View className={styles.sliderSection}>
           <Text className={styles.sliderTitle}>滑动对比</Text>
           <View className={styles.sliderContainer}>
-            <Image
-              className={styles.photoBase}
-              src={leftPhoto}
-              mode="aspectFill"
-            />
-            <View
-              className={styles.photoOverlay}
-              style={{ width: `${sliderValue}%` }}
-            >
-              <Image
-                className={styles.overlayImg}
-                src={rightPhoto}
-                mode="aspectFill"
-              />
+            <Image className={styles.photoBase} src={leftPhoto} mode="aspectFill" />
+            <View className={styles.photoOverlay} style={{ width: `${sliderValue}%` }}>
+              <Image className={styles.overlayImg} src={rightPhoto} mode="aspectFill" />
             </View>
-            <View
-              className={styles.sliderLine}
-              style={{ left: `${sliderValue}%` }}
-            >
+            <View className={styles.sliderLine} style={{ left: `${sliderValue}%` }}>
               <View className={styles.sliderHandle}>
                 <Text className={styles.handleIcon}>⇋</Text>
               </View>
@@ -162,25 +166,25 @@ const ComparePage: React.FC = () => {
 
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>对比前</Text>
-            <Text className={styles.infoValue}>{leftRecord.date} · {leftRecord.typeLabel}</Text>
+            <Text className={styles.infoValue}>{safeLeft.date} · {safeLeft.typeLabel}</Text>
           </View>
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>对比后</Text>
-            <Text className={styles.infoValue}>{rightRecord.date} · {rightRecord.typeLabel}</Text>
+            <Text className={styles.infoValue}>{safeRight.date} · {safeRight.typeLabel}</Text>
           </View>
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>间隔时间</Text>
-            <Text className={styles.infoValue}>约 11 个月</Text>
+            <Text className={styles.infoValue}>{calcInterval(safeLeft, safeRight)}</Text>
           </View>
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>当前照片</Text>
             <Text className={styles.infoValue}>{photoTypes[activePhotoType]}</Text>
           </View>
 
-          {rightRecord.doctorNote && (
+          {safeRight.doctorNote && (
             <View className={styles.doctorNote}>
               <Text className={styles.noteLabel}>📝 医生备注</Text>
-              <Text className={styles.noteText}>{rightRecord.doctorNote}</Text>
+              <Text className={styles.noteText}>{safeRight.doctorNote}</Text>
             </View>
           )}
         </View>

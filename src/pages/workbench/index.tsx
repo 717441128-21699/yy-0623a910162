@@ -3,7 +3,7 @@ import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { usePullDownRefresh } from '@tarojs/taro';
 import styles from './index.module.scss';
-import { reviewTasks } from '@/data/reviewTasks';
+import { useApp } from '@/store';
 import { ReviewTask } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import classnames from 'classnames';
@@ -11,17 +11,19 @@ import classnames from 'classnames';
 type TabType = 'pending' | 'approved' | 'rejected';
 
 const WorkbenchPage: React.FC = () => {
+  const { state, dispatch } = useApp();
   const [activeTab, setActiveTab] = useState<TabType>('pending');
   const [loading, setLoading] = useState(false);
-  const [tasks, setTasks] = useState<ReviewTask[]>(reviewTasks);
+
+  const tasks = state.reviewTasks;
+  const staffInfo = state.staffInfo;
 
   usePullDownRefresh(() => {
-    console.log('[Workbench] 下拉刷新');
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
       Taro.stopPullDownRefresh();
-    }, 1000);
+    }, 800);
   });
 
   const filteredTasks = useMemo(() => {
@@ -38,11 +40,9 @@ const WorkbenchPage: React.FC = () => {
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
-    console.log(`[Workbench] 切换到 ${tab} 标签`);
   };
 
   const handleGoReview = (taskId: string) => {
-    console.log(`[Workbench] 跳转到核对详情: ${taskId}`);
     Taro.navigateTo({
       url: `/pages/review-detail/index?id=${taskId}`
     });
@@ -56,17 +56,25 @@ const WorkbenchPage: React.FC = () => {
 
   return (
     <View className={styles.container}>
+      <View className={styles.staffHeader}>
+        <Image className={styles.staffAvatar} src={staffInfo.avatar} mode="aspectFill" />
+        <View className={styles.staffInfo}>
+          <Text className={styles.staffName}>{staffInfo.name}</Text>
+          <Text className={styles.staffRole}>{staffInfo.department} · {staffInfo.role}</Text>
+        </View>
+      </View>
+
       <View className={styles.statsSection}>
         <View className={styles.statsGrid}>
-          <View className={styles.statItem}>
+          <View className={classnames(styles.statItem, styles.pending)}>
             <Text className={styles.statNum}>{stats.pending}</Text>
             <Text className={styles.statLabel}>待核对</Text>
           </View>
-          <View className={styles.statItem}>
+          <View className={classnames(styles.statItem, styles.approved)}>
             <Text className={styles.statNum}>{stats.approved}</Text>
             <Text className={styles.statLabel}>已通过</Text>
           </View>
-          <View className={styles.statItem}>
+          <View className={classnames(styles.statItem, styles.rejected)}>
             <Text className={styles.statNum}>{stats.rejected}</Text>
             <Text className={styles.statLabel}>需重拍</Text>
           </View>
@@ -93,7 +101,7 @@ const WorkbenchPage: React.FC = () => {
         refresherTriggered={loading}
         onRefresherRefresh={() => {
           setLoading(true);
-          setTimeout(() => setLoading(false), 1000);
+          setTimeout(() => setLoading(false), 800);
         }}
       >
         {filteredTasks.length > 0 ? (
@@ -120,18 +128,31 @@ const WorkbenchPage: React.FC = () => {
 
               <View className={styles.photoPreview}>
                 {task.photos.slice(0, 5).map(photo => (
-                  <Image
-                    key={photo.id}
-                    className={styles.previewImg}
-                    src={photo.url}
-                    mode="aspectFill"
-                  />
+                  <View key={photo.id} className={styles.previewWrapper}>
+                    <Image
+                      className={styles.previewImg}
+                      src={photo.url}
+                      mode="aspectFill"
+                    />
+                    {photo.status !== 'pending' && (
+                      <View className={classnames(
+                        styles.miniBadge,
+                        photo.status === 'approved' && styles.miniApproved,
+                        photo.status === 'rejected' && styles.miniRejected
+                      )}>
+                        <Text>{photo.status === 'approved' ? '✓' : '✗'}</Text>
+                      </View>
+                    )}
+                  </View>
                 ))}
               </View>
 
               <View className={styles.footer}>
                 <Text className={styles.appointment}>复诊：{task.appointmentDate}</Text>
-                <View className={styles.reviewBtn}>
+                <View className={classnames(
+                  styles.reviewBtn,
+                  task.status === 'pending' && styles.primary
+                )}>
                   <Text>{task.status === 'pending' ? '去核对' : '查看详情'}</Text>
                 </View>
               </View>

@@ -3,7 +3,7 @@
 .container {
   min-height: 100vh;
   background: $color-bg-page;
-  padding-bottom: 140rpx;
+  padding-bottom: 160rpx;
 }
 
 .header {
@@ -66,6 +66,13 @@
         transition: width $transition-base;
       }
     }
+
+    .progressComplete {
+      margin-top: $spacing-sm;
+      font-size: $font-size-xs;
+      color: $color-success;
+      font-weight: $font-weight-medium;
+    }
   }
 }
 
@@ -93,6 +100,11 @@
 
   &:active {
     transform: scale(0.99);
+  }
+
+  &.itemRejected {
+    border: 2rpx solid $color-error;
+    background: rgba(239, 68, 68, 0.03);
   }
 
   .photoPreview {
@@ -123,10 +135,22 @@
       left: 0;
       right: 0;
       bottom: 0;
-      background: rgba(0, 0, 0, 0.4);
       display: flex;
       align-items: center;
       justify-content: center;
+
+      &.statusPending {
+        background: rgba(107, 114, 128, 0.5);
+      }
+      &.statusSubmitted {
+        background: rgba(45, 127, 249, 0.55);
+      }
+      &.statusApproved {
+        background: rgba(52, 211, 153, 0.55);
+      }
+      &.statusRejected {
+        background: rgba(239, 68, 68, 0.55);
+      }
 
       .statusText {
         font-size: $font-size-xs;
@@ -153,6 +177,25 @@
       line-height: 1.4;
       @include text-ellipsis-multi(2);
     }
+
+    .rejectReason {
+      margin-top: $spacing-xs;
+      display: flex;
+      align-items: flex-start;
+      gap: $spacing-xs;
+
+      .rejectIcon {
+        font-size: $font-size-xs;
+        flex-shrink: 0;
+        line-height: 1.5;
+      }
+
+      .rejectText {
+        font-size: $font-size-xs;
+        color: $color-error;
+        line-height: 1.5;
+      }
+    }
   }
 
   .actionBtn {
@@ -173,8 +216,18 @@
     }
 
     &.warning {
-      background: $color-warning-bg;
-      color: $color-warning;
+      background: $color-error-bg;
+      color: $color-error;
+    }
+
+    &.approved {
+      background: $color-success-bg;
+      color: $color-success;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
     }
   }
 }
@@ -189,6 +242,35 @@
   padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
 
+  .reviewingHint,
+  .approvedHint {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: $spacing-sm;
+    padding: $spacing-md;
+    border-radius: $radius-lg;
+
+    .hintIcon {
+      font-size: $font-size-lg;
+    }
+
+    .hintText {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-medium;
+    }
+  }
+
+  .reviewingHint {
+    background: $color-info-bg;
+    color: $color-primary;
+  }
+
+  .approvedHint {
+    background: $color-success-bg;
+    color: $color-success;
+  }
+
   .submitBtn {
     width: 100%;
     height: $button-height-lg;
@@ -201,8 +283,10 @@
     font-weight: $font-weight-semibold;
     color: $color-text-white;
 
-    &:disabled {
+    &.disabled {
       opacity: 0.5;
+      pointer-events: none;
+      background: $color-bg-disabled;
     }
 
     &:active {

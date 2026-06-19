@@ -1,15 +1,36 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { mockUserInfo } from '@/data/photoTasks';
+import { useApp, resetAppState } from '@/store';
 
 const MinePage: React.FC = () => {
-  const userInfo = mockUserInfo;
-  const progressPercent = Math.round((userInfo.completedAppointments / userInfo.totalAppointments) * 100);
+  const { state, dispatch } = useApp();
+  const userInfo = state.userInfo;
+  const progressPercent = useMemo(
+    () => Math.round((userInfo.completedAppointments / userInfo.totalAppointments) * 100),
+    [userInfo]
+  );
+
+  const handleResetData = () => {
+    Taro.showModal({
+      title: '重置演示数据',
+      content: '这将清除所有拍照进度和核对记录，回到初始状态。是否继续？',
+      success: (res) => {
+        if (res.confirm) {
+          resetAppState();
+          dispatch({ type: 'RESET_TASK' });
+          Taro.showToast({ title: '已重置数据', icon: 'success' });
+        }
+      }
+    });
+  };
 
   const handleMenuItemClick = (type: string) => {
-    console.log(`[Mine] 点击菜单项: ${type}`);
+    if (type === 'reset') {
+      handleResetData();
+      return;
+    }
     Taro.showToast({ title: '功能开发中', icon: 'none' });
   };
 
@@ -27,7 +48,8 @@ const MinePage: React.FC = () => {
       items: [
         { icon: '❓', title: '帮助中心', desc: '常见问题解答', type: 'help' },
         { icon: '⚙️', title: '设置', desc: '消息通知、隐私设置', type: 'settings' },
-        { icon: '📞', title: '联系诊所', desc: '电话/在线咨询', type: 'contact' }
+        { icon: '📞', title: '联系诊所', desc: '电话/在线咨询', type: 'contact' },
+        { icon: '🔄', title: '重置演示数据', desc: '清除所有进度，回到初始状态', type: 'reset' }
       ]
     }
   ];

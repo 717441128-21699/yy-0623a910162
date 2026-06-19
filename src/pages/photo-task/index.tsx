@@ -1,16 +1,16 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import styles from './index.module.scss';
-import { currentTask } from '@/data/photoTasks';
-import { PhotoItem as PhotoItemType, PhotoTask } from '@/types';
+import { useApp } from '@/store';
+import { PhotoItem as PhotoItemType } from '@/types';
 import classnames from 'classnames';
 
 const PhotoTaskPage: React.FC = () => {
-  const [task, setTask] = useState<PhotoTask>(currentTask);
+  const { state, dispatch } = useApp();
+  const task = state.currentTask;
 
   const handleStartCapture = (itemId: string) => {
-    console.log(`[PhotoTask] 开始拍摄: ${itemId}`);
     Taro.navigateTo({
       url: `/pages/capture-guide/index?itemId=${itemId}`
     });
@@ -24,6 +24,14 @@ const PhotoTaskPage: React.FC = () => {
   };
 
   const handleSubmit = () => {
+    if (task.completedCount === 0) {
+      Taro.showToast({ title: '请先拍摄至少一张照片', icon: 'none' });
+      return;
+    }
+    if (task.status === 'reviewing' || task.status === 'approved') {
+      Taro.showToast({ title: '已提交，无需重复提交', icon: 'none' });
+      return;
+    }
     if (task.completedCount < task.totalCount) {
       Taro.showModal({
         title: '提示',
@@ -31,9 +39,7 @@ const PhotoTaskPage: React.FC = () => {
         confirmText: '确定提交',
         cancelText: '继续拍摄',
         success: (res) => {
-          if (res.confirm) {
-            doSubmit();
-          }
+          if (res.confirm) doSubmit();
         }
       });
     } else {
@@ -42,15 +48,13 @@ const PhotoTaskPage: React.FC = () => {
   };
 
   const doSubmit = () => {
-    console.log('[PhotoTask] 提交照片任务');
     Taro.showLoading({ title: '提交中...' });
     setTimeout(() => {
+      dispatch({ type: 'SUBMIT_TASK' });
       Taro.hideLoading();
-      Taro.showToast({ title: '提交成功', icon: 'success' });
-      setTimeout(() => {
-        Taro.navigateBack();
-      }, 1500);
-    }, 1500);
+      Taro.showToast({ title: '提交成功，请等待护士核对', icon: 'success' });
+      setTimeout(() => Taro.navigateBack(), 1500);
+    }, 800);
   };
 
   const getStatusText = (status: string) => {
@@ -63,6 +67,16 @@ const PhotoTaskPage: React.FC = () => {
     return map[status] || status;
   };
 
+  const getStatusClass = (status: string) => {
+    const map: Record<string, string> = {
+      pending: 'statusPending',
+      submitted: 'statusSubmitted',
+      approved: 'statusApproved',
+      rejected: 'statusRejected'
+    };
+    return map[status] || 'statusPending';
+  };
+
   const getActionBtnConfig = (item: PhotoItemType) => {
     switch (item.status) {
       case 'pending':
@@ -70,7 +84,7 @@ const PhotoTaskPage: React.FC = () => {
       case 'submitted':
         return { text: '查看', className: 'secondary' };
       case 'approved':
-        return { text: '查看', className: 'secondary' };
+        return { text: '已通过', className: 'approved' };
       case 'rejected':
         return { text: '重拍', className: 'warning' };
       default:
@@ -78,9 +92,19 @@ const PhotoTaskPage: React.FC = () => {
     }
   };
 
+  const handleItemClick = (item: PhotoItemType) => {
+    if (item.status === 'approved') {
+      if (item.userPhoto) handleViewPhoto(item.userPhoto);
+      return;
+    }
+    handleStartCapture(item.id);
+  };
+
   const progressPercent = task.totalCount > 0
     ? Math.round((task.completedCount / task.totalCount) * 100)
     : 0;
+
+  const canSubmit = task.completedCount > 0 && task.status !== 'reviewing' && task.status !== 'approved';
 
   return (
     <View className={styles.container}>
@@ -109,6 +133,9 @@ const PhotoTaskPage: React.FC = () => {
               style={{ width: `${progressPercent}%` }}
             />
           </View>
+          {progressPercent === 100 && (
+            <Text className={styles.progressComplete}>✅ 已完成全部拍摄</Text>
+          )}
         </View>
       </View>
 
@@ -117,33 +144,29 @@ const PhotoTaskPage: React.FC = () => {
 
         {task.items.map((item, index) => {
           const btnConfig = getActionBtnConfig(item);
-          const hasPhoto = item.userPhoto && item.status !== 'pending';
+          const hasPhoto = !!item.userPhoto;
 
           return (
             <View
               key={item.id}
-              className={styles.photoItem}
-              onClick={() => handleStartCapture(item.id)}
+              className={classnames(styles.photoItem, item.status === 'rejected' && styles.itemRejected)}
+              onClick={() => handleItemClick(item)}
             >
               <View className={styles.photoPreview}>
                 {hasPhoto ? (
                   <>
                     <Image
                       className={styles.previewImg}
-                      src={item.userPhoto}
+                      src={item.userPhoto!}
                       mode="aspectFill"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleViewPhoto(item.userPhoto!);
                       }}
                     />
-                    {item.status !== 'pending' && (
-                      <View className={styles.statusOverlay}>
-                        <Text className={styles.statusText}>
-                          {getStatusText(item.status)}
-                        </Text>
-                      </View>
-                    )}
+                    <View className={classnames(styles.statusOverlay, styles[getStatusClass(item.status)])}>
+                      <Text className={styles.statusText}>{getStatusText(item.status)}</Text>
+                    </View>
                   </>
                 ) : (
                   <Text className={styles.placeholderIcon}>📷</Text>
@@ -155,9 +178,21 @@ const PhotoTaskPage: React.FC = () => {
                   {index + 1}. {item.name}
                 </Text>
                 <Text className={styles.photoDesc}>{item.description}</Text>
+                {item.status === 'rejected' && item.rejectReason && (
+                  <View className={styles.rejectReason}>
+                    <Text className={styles.rejectIcon}>⚠️</Text>
+                    <Text className={styles.rejectText}>不合格原因：{item.rejectReason}</Text>
+                  </View>
+                )}
               </View>
 
-              <View className={classnames(styles.actionBtn, styles[btnConfig.className])}>
+              <View
+                className={classnames(styles.actionBtn, styles[btnConfig.className])}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleItemClick(item);
+                }}
+              >
                 <Text>{btnConfig.text}</Text>
               </View>
             </View>
@@ -166,12 +201,28 @@ const PhotoTaskPage: React.FC = () => {
       </ScrollView>
 
       <View className={styles.bottomBar}>
-        <View
-          className={styles.submitBtn}
-          onClick={handleSubmit}
-        >
-          <Text>提交审核</Text>
-        </View>
+        {task.status === 'reviewing' && (
+          <View className={styles.reviewingHint}>
+            <Text className={styles.hintIcon}>⏳</Text>
+            <Text className={styles.hintText}>已提交，等待护士核对中...</Text>
+          </View>
+        )}
+        {task.status === 'approved' && (
+          <View className={styles.approvedHint}>
+            <Text className={styles.hintIcon}>✅</Text>
+            <Text className={styles.hintText}>全部照片已通过审核</Text>
+          </View>
+        )}
+        {task.status !== 'reviewing' && task.status !== 'approved' && (
+          <View
+            className={classnames(styles.submitBtn, !canSubmit && styles.disabled)}
+            onClick={handleSubmit}
+          >
+            <Text>
+              {task.completedCount === 0 ? '请先拍摄照片' : `提交审核 (${task.completedCount}张)`}
+            </Text>
+          </View>
+        )}
       </View>
     </View>
   );

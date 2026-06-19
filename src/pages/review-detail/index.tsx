@@ -3,82 +3,101 @@ import { View, Text, Image, ScrollView } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 import { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
-import { reviewTasks, rejectReasons } from '@/data/reviewTasks';
+import { useApp } from '@/store';
 import { ReviewPhoto } from '@/types';
 import StatusBadge from '@/components/StatusBadge';
 import classnames from 'classnames';
 
 const ReviewDetailPage: React.FC = () => {
   const router = useRouter();
-  const taskId = router.params.id || 'r1';
+  const taskId = router.params.id || '';
+  const { state, dispatch } = useApp();
 
   const task = useMemo(() => {
-    return reviewTasks.find(t => t.id === taskId) || reviewTasks[0];
-  }, [taskId]);
+    return state.reviewTasks.find(t => t.id === taskId) || state.reviewTasks[0];
+  }, [state.reviewTasks, taskId]);
 
-  const [photos, setPhotos] = useState<ReviewPhoto[]>(task.photos);
+  const rejectReasons = state.rejectReasons;
+
+  const [photos, setPhotos] = useState<ReviewPhoto[]>(task ? [...task.photos] : []);
   const [showRejectModal, setShowRejectModal] = useState(false);
   const [currentPhotoId, setCurrentPhotoId] = useState<string | null>(null);
-  const [selectedReason, setSelectedReason] = useState<string | null>(null);
+  const [selectedReasons, setSelectedReasons] = useState<string[]>([]);
 
   const handleApprovePhoto = (photoId: string) => {
-    console.log(`[ReviewDetail] 通过照片: ${photoId}`);
-    setPhotos(prev =>
-      prev.map(p =>
-        p.id === photoId ? { ...p, status: 'approved', rejectReason: undefined } : p
-      )
+    const newPhotos = photos.map(p =>
+      p.id === photoId ? { ...p, status: 'approved' as const, rejectReason: undefined } : p
     );
+    setPhotos(newPhotos);
+    if (task) {
+      dispatch({ type: 'APPROVE_REVIEW_PHOTO', payload: { taskId: task.id, photoId } });
+    }
     Taro.showToast({ title: '已通过', icon: 'success' });
   };
 
   const handleRejectPhoto = (photoId: string) => {
-    console.log(`[ReviewDetail] 拒绝照片: ${photoId}`);
     setCurrentPhotoId(photoId);
-    setSelectedReason(null);
+    setSelectedReasons([]);
     setShowRejectModal(true);
   };
 
-  const handleSelectReason = (reasonId: string) => {
-    setSelectedReason(reasonId);
+  const handleToggleReason = (reasonId: string) => {
+    setSelectedReasons(prev =>
+      prev.includes(reasonId)
+        ? prev.filter(r => r !== reasonId)
+        : [...prev, reasonId]
+    );
   };
 
   const handleConfirmReject = () => {
-    if (!selectedReason || !currentPhotoId) {
+    if (selectedReasons.length === 0 || !currentPhotoId) {
       Taro.showToast({ title: '请选择不合格原因', icon: 'none' });
       return;
     }
 
-    const reason = rejectReasons.find(r => r.id === selectedReason);
-    setPhotos(prev =>
-      prev.map(p =>
-        p.id === currentPhotoId
-          ? { ...p, status: 'rejected', rejectReason: reason?.label }
-          : p
-      )
+    const reasonLabels = rejectReasons
+      .filter(r => selectedReasons.includes(r.id))
+      .map(r => r.label);
+
+    const reasonStr = reasonLabels.join('、');
+
+    const newPhotos = photos.map(p =>
+      p.id === currentPhotoId
+        ? { ...p, status: 'rejected' as const, rejectReason: reasonStr }
+        : p
     );
+    setPhotos(newPhotos);
+
+    if (task) {
+      dispatch({
+        type: 'REJECT_REVIEW_PHOTO',
+        payload: { taskId: task.id, photoId: currentPhotoId, reasons: reasonLabels }
+      });
+    }
 
     setShowRejectModal(false);
     setCurrentPhotoId(null);
-    setSelectedReason(null);
+    setSelectedReasons([]);
     Taro.showToast({ title: '已标记重拍', icon: 'none' });
   };
 
   const handleCancelReject = () => {
     setShowRejectModal(false);
     setCurrentPhotoId(null);
-    setSelectedReason(null);
+    setSelectedReasons([]);
   };
 
   const handleBatchApprove = () => {
-    console.log('[ReviewDetail] 批量通过');
     Taro.showModal({
       title: '确认通过',
       content: '确定要通过所有照片吗？',
       success: (res) => {
         if (res.confirm) {
-          setPhotos(prev =>
-            prev.map(p => ({ ...p, status: 'approved', rejectReason: undefined }))
-          );
+          const newPhotos = photos.map(p => ({ ...p, status: 'approved' as const, rejectReason: undefined }));
+          setPhotos(newPhotos);
+          if (task) {
+            dispatch({ type: 'APPROVE_ALL_REVIEW', payload: { taskId: task.id } });
+          }
           Taro.showToast({ title: '全部通过', icon: 'success' });
         }
       }
@@ -95,19 +114,19 @@ const ReviewDetailPage: React.FC = () => {
       return;
     }
 
-    console.log('[ReviewDetail] 提交审核结果');
     Taro.showLoading({ title: '提交中...' });
     setTimeout(() => {
+      if (task) {
+        dispatch({ type: 'APPLY_REVIEW_RESULTS', payload: { taskId: task.id } });
+      }
       Taro.hideLoading();
       Taro.showToast({
         title: `审核完成\n通过${approvedCount}张，重拍${rejectedCount}张`,
         icon: 'none',
         duration: 2000
       });
-      setTimeout(() => {
-        Taro.navigateBack();
-      }, 2000);
-    }, 1500);
+      setTimeout(() => Taro.navigateBack(), 2000);
+    }, 800);
   };
 
   const handlePreviewPhoto = (url: string) => {
@@ -117,9 +136,21 @@ const ReviewDetailPage: React.FC = () => {
     });
   };
 
+  if (!task) {
+    return (
+      <View className={styles.container}>
+        <View className={styles.emptyState}>
+          <Text className={styles.emptyIcon}>⚠️</Text>
+          <Text className={styles.emptyText}>未找到核对任务</Text>
+        </View>
+      </View>
+    );
+  }
+
   const approvedCount = photos.filter(p => p.status === 'approved').length;
   const rejectedCount = photos.filter(p => p.status === 'rejected').length;
   const pendingCount = photos.filter(p => p.status === 'pending').length;
+  const allDone = pendingCount === 0;
 
   return (
     <View className={styles.container}>
@@ -135,6 +166,9 @@ const ReviewDetailPage: React.FC = () => {
             提交于 {task.submitTime} · 复诊 {task.appointmentDate}
           </Text>
         </View>
+        <View className={styles.badgeWrap}>
+          <StatusBadge status={task.status === 'pending' ? 'reviewing' : task.status} />
+        </View>
       </View>
 
       <ScrollView scrollY className={styles.photoList}>
@@ -146,9 +180,18 @@ const ReviewDetailPage: React.FC = () => {
         </Text>
 
         {photos.map(photo => (
-          <View key={photo.id} className={styles.photoItem}>
+          <View
+            key={photo.id}
+            className={classnames(
+              styles.photoItem,
+              photo.status === 'rejected' && styles.itemRejected
+            )}
+          >
             <View className={styles.photoHeader}>
               <Text className={styles.photoName}>{photo.name}</Text>
+              {photo.status !== 'pending' && (
+                <StatusBadge status={photo.status} size="small" />
+              )}
             </View>
 
             <View className={styles.photoContent}>
@@ -158,11 +201,6 @@ const ReviewDetailPage: React.FC = () => {
                 mode="aspectFill"
                 onClick={() => handlePreviewPhoto(photo.url)}
               />
-              {photo.status !== 'pending' && (
-                <View className={styles.statusBadge}>
-                  <StatusBadge status={photo.status} size="small" />
-                </View>
-              )}
             </View>
 
             {photo.status === 'rejected' && photo.rejectReason && (
@@ -178,13 +216,13 @@ const ReviewDetailPage: React.FC = () => {
                   className={classnames(styles.btn, styles.approve)}
                   onClick={() => handleApprovePhoto(photo.id)}
                 >
-                  <Text>通过</Text>
+                  <Text>✅ 通过</Text>
                 </View>
                 <View
                   className={classnames(styles.btn, styles.reject)}
                   onClick={() => handleRejectPhoto(photo.id)}
                 >
-                  <Text>不合格</Text>
+                  <Text>❌ 不合格</Text>
                 </View>
               </View>
             )}
@@ -200,17 +238,19 @@ const ReviewDetailPage: React.FC = () => {
           <Text>全部通过</Text>
         </View>
         <View
-          className={classnames(styles.btn, styles.primary)}
+          className={classnames(styles.btn, styles.primary, !allDone && styles.disabled)}
           onClick={handleSubmit}
         >
-          <Text>提交审核结果</Text>
+          <Text>
+            {allDone ? `提交审核结果` : `还剩${pendingCount}张未审核`}
+          </Text>
         </View>
       </View>
 
       {showRejectModal && (
         <View className={styles.rejectModal} onClick={handleCancelReject}>
           <View className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <Text className={styles.modalTitle}>选择不合格原因</Text>
+            <Text className={styles.modalTitle}>选择不合格原因（可多选）</Text>
 
             <View className={styles.reasonGrid}>
               {rejectReasons.map(reason => (
@@ -218,9 +258,9 @@ const ReviewDetailPage: React.FC = () => {
                   key={reason.id}
                   className={classnames(
                     styles.reasonItem,
-                    selectedReason === reason.id && styles.selected
+                    selectedReasons.includes(reason.id) && styles.selected
                   )}
-                  onClick={() => handleSelectReason(reason.id)}
+                  onClick={() => handleToggleReason(reason.id)}
                 >
                   <Text className={styles.reasonIcon}>{reason.icon}</Text>
                   <Text className={styles.reasonLabel}>{reason.label}</Text>
@@ -236,10 +276,10 @@ const ReviewDetailPage: React.FC = () => {
                 <Text>取消</Text>
               </View>
               <View
-                className={classnames(styles.btn, styles.confirm)}
+                className={classnames(styles.btn, styles.confirm, selectedReasons.length === 0 && styles.disabled)}
                 onClick={handleConfirmReject}
               >
-                <Text>确认</Text>
+                <Text>确认（{selectedReasons.length}）</Text>
               </View>
             </View>
           </View>
