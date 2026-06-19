@@ -55,6 +55,11 @@
     border-radius: $radius-lg;
     padding: $spacing-lg;
     box-shadow: $shadow-card;
+    transition: all $transition-fast;
+
+    &:active {
+      transform: scale(0.99);
+    }
 
     .header {
       display: flex;
@@ -66,6 +71,31 @@
         font-size: $font-size-md;
         font-weight: $font-weight-semibold;
         color: $color-text-primary;
+      }
+
+      .headerRight {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+      }
+
+      .reviewPill {
+        .pillOk {
+          font-size: 20rpx;
+          background: $color-success-bg;
+          color: $color-success;
+          padding: 2rpx 10rpx;
+          border-radius: $radius-round;
+          font-weight: $font-weight-semibold;
+        }
+        .pillFail {
+          font-size: 20rpx;
+          background: $color-error-bg;
+          color: $color-error;
+          padding: 2rpx 10rpx;
+          border-radius: $radius-round;
+          font-weight: $font-weight-semibold;
+        }
       }
 
       .typeTag {
@@ -100,11 +130,28 @@
       gap: $spacing-sm;
       flex-wrap: wrap;
       margin-bottom: $spacing-md;
+      align-items: center;
 
       .photo {
         width: calc((100% - 32rpx * 4) / 5);
         height: 110rpx;
         border-radius: $radius-sm;
+      }
+
+      .morePhoto {
+        width: calc((100% - 32rpx * 4) / 5);
+        height: 110rpx;
+        border-radius: $radius-sm;
+        background: $color-bg-section;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        .moreText {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+          font-weight: $font-weight-semibold;
+        }
       }
     }
 

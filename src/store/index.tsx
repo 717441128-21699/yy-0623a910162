@@ -83,9 +83,12 @@ function reducer(state: AppState, action: Action): AppState {
 
     case 'UPDATE_PHOTO': {
       const { itemId, photoUrl } = action.payload;
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const ts = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
       const newItems = state.currentTask.items.map(item =>
         item.id === itemId
-          ? { ...item, status: 'submitted' as const, userPhoto: photoUrl, rejectReason: undefined }
+          ? { ...item, status: 'submitted' as const, userPhoto: photoUrl, rejectReason: undefined, submittedAt: ts }
           : item
       );
       const completedCount = getCompletedCount(newItems);
@@ -139,22 +142,24 @@ function reducer(state: AppState, action: Action): AppState {
       const submitTime = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
       const dateStr = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
       const monthStr = `${now.getFullYear()}年${now.getMonth() + 1}月`;
+      const appointmentId = `apt-${task.appointmentDate.replace(/-/g, '')}`;
+      const reviewTaskId = `review-${Date.now()}`;
 
-      const reviewPhotos = task.items
-        .filter(i => i.userPhoto)
-        .map(item => ({
-          id: `rp-${item.id}-${Date.now()}`,
-          name: item.name,
-          url: item.userPhoto!,
-          status: 'pending' as const,
-        }));
+      const submittedItems = task.items.filter(i => i.userPhoto);
+      const reviewPhotos = submittedItems.map(item => ({
+        id: `rp-${item.id}-${Date.now()}`,
+        name: item.name,
+        url: item.userPhoto!,
+        status: 'pending' as const,
+      }));
 
       const newReviewTask: ReviewTask = {
-        id: `review-${Date.now()}`,
+        id: reviewTaskId,
         patientName: state.userInfo.name,
         patientAvatar: state.userInfo.avatar,
         submitTime,
         appointmentDate: task.appointmentDate,
+        appointmentId,
         photoCount: reviewPhotos.length,
         status: 'pending',
         photos: reviewPhotos,
@@ -167,12 +172,22 @@ function reducer(state: AppState, action: Action): AppState {
         type: 'self_photo',
         typeLabel: '自助拍照',
         photos: reviewPhotos.map(p => p.url),
-        description: '第13次复诊前自拍',
+        photoNames: submittedItems.map(i => i.name),
+        description: `第${state.userInfo.completedAppointments + 1}次复诊前自拍（${submittedItems.length}张）`,
+        doctorNote: '待护士核对',
+        appointmentId,
+        appointmentDate: task.appointmentDate,
+        reviewStatus: 'pending',
+        reviewSummary: { approvedCount: 0, rejectedCount: 0 },
+        rejectedItems: [],
       };
 
       const newTask: PhotoTask = {
         ...task,
         status: 'reviewing',
+        submittedAt: submitTime,
+        appointmentId,
+        reviewTaskId,
       };
 
       return {
@@ -238,12 +253,20 @@ function reducer(state: AppState, action: Action): AppState {
       const reviewTask = state.reviewTasks.find(rt => rt.id === taskId);
       if (!reviewTask) return state;
 
+      const now = new Date();
+      const pad = (n: number) => n.toString().padStart(2, '0');
+      const reviewedAt = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())} ${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      const staffName = state.staffInfo.name;
+
       const nameToIdMap: Record<string, string> = {};
       state.currentTask.items.forEach(item => {
         nameToIdMap[item.name] = item.id;
       });
 
       let newItems = [...state.currentTask.items];
+      const approvedList: string[] = [];
+      const rejectedList: { name: string; reason: string }[] = [];
+
       reviewTask.photos.forEach(rp => {
         const itemId = nameToIdMap[rp.name];
         if (!itemId) return;
@@ -251,12 +274,14 @@ function reducer(state: AppState, action: Action): AppState {
           newItems = newItems.map(item =>
             item.id === itemId ? { ...item, status: 'approved' as const } : item
           );
+          approvedList.push(rp.name);
         } else if (rp.status === 'rejected' && rp.rejectReason) {
           newItems = newItems.map(item =>
             item.id === itemId
               ? { ...item, status: 'rejected' as const, rejectReason: rp.rejectReason, userPhoto: rp.url }
               : item
           );
+          rejectedList.push({ name: rp.name, reason: rp.rejectReason });
         }
       });
 
@@ -269,9 +294,45 @@ function reducer(state: AppState, action: Action): AppState {
         items: newItems,
         completedCount,
         status: allApproved ? 'approved' : hasRejected ? 'rejected' : 'reviewing',
+        reviewedAt,
       };
 
-      return { ...state, currentTask: newTask };
+      // 同步更新 reviewTask 的 reviewedAt/reviewedBy
+      const newReviewTasks = state.reviewTasks.map(rt => {
+        if (rt.id !== taskId) return rt;
+        return { ...rt, reviewedAt, reviewedBy: staffName };
+      });
+
+      // 更新对应历史记录（按 appointmentId 匹配）
+      const newHistoryRecords = state.historyRecords.map(h => {
+        if (h.appointmentId !== reviewTask.appointmentId || h.type !== 'self_photo') return h;
+        const summary = {
+          approvedCount: approvedList.length,
+          rejectedCount: rejectedList.length,
+          reviewedAt,
+          reviewedBy: staffName
+        };
+        let note = '';
+        if (allApproved) {
+          note = `✅ 全部${approvedList.length}张照片通过审核，复诊当天可直接使用`;
+        } else if (hasRejected) {
+          note = `⚠️ ${rejectedList.length}张照片不合格需要重拍：${rejectedList.map(r => r.name).join('、')}`;
+        }
+        return {
+          ...h,
+          reviewStatus: allApproved ? 'approved' as const : hasRejected ? 'rejected' as const : h.reviewStatus,
+          reviewSummary: summary,
+          rejectedItems: rejectedList,
+          doctorNote: note || h.doctorNote,
+        };
+      });
+
+      return {
+        ...state,
+        currentTask: newTask,
+        reviewTasks: newReviewTasks,
+        historyRecords: newHistoryRecords,
+      };
     }
 
     case 'RESET_TASK': {

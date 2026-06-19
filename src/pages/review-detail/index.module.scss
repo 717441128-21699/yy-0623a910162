@@ -3,7 +3,7 @@
 .container {
   min-height: 100vh;
   background: $color-bg-page;
-  padding-bottom: 160rpx;
+  padding-bottom: 300rpx;
 }
 
 .patientHeader {
@@ -35,18 +35,125 @@
       color: $color-text-tertiary;
     }
   }
+
+  .badgeWrap {
+    flex-shrink: 0;
+  }
+}
+
+.navBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: $spacing-md $page-padding;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+
+  .navBtn {
+    padding: $spacing-sm $spacing-md;
+    border-radius: $radius-sm;
+    background: $color-bg-section;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    font-weight: $font-weight-medium;
+
+    &.disabled {
+      opacity: 0.4;
+      pointer-events: none;
+    }
+
+    &:active {
+      background: $color-primary-bg;
+      color: $color-primary;
+    }
+  }
+
+  .progress {
+    font-size: $font-size-lg;
+    font-weight: $font-weight-bold;
+    color: $color-primary;
+  }
+}
+
+.thumbBar {
+  white-space: nowrap;
+  padding: $spacing-sm $page-padding;
+  background: $color-bg-card;
+  border-bottom: 1rpx solid $color-divider;
+  display: flex;
+  gap: $spacing-xs;
+
+  .thumbItem {
+    flex-shrink: 0;
+    width: 96rpx;
+    height: 96rpx;
+    border-radius: $radius-sm;
+    position: relative;
+    overflow: hidden;
+    border: 3rpx solid transparent;
+
+    &.thumbActive {
+      border-color: $color-primary;
+      box-shadow: 0 0 0 2rpx $color-primary-bg;
+    }
+
+    &.thumbOk {
+      &::after {
+        content: '✓';
+        position: absolute;
+        bottom: 4rpx;
+        right: 4rpx;
+        width: 28rpx;
+        height: 28rpx;
+        border-radius: $radius-round;
+        background: $color-success;
+        color: $color-text-white;
+        font-size: 20rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    &.thumbFail {
+      &::after {
+        content: '✗';
+        position: absolute;
+        bottom: 4rpx;
+        right: 4rpx;
+        width: 28rpx;
+        height: 28rpx;
+        border-radius: $radius-round;
+        background: $color-error;
+        color: $color-text-white;
+        font-size: 20rpx;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: $font-weight-bold;
+      }
+    }
+
+    .thumbImg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .thumbIdx {
+      position: absolute;
+      top: 2rpx;
+      left: 4rpx;
+      font-size: 18rpx;
+      color: $color-text-white;
+      font-weight: $font-weight-semibold;
+      text-shadow: 0 1rpx 2rpx rgba(0, 0, 0, 0.6);
+    }
+  }
 }
 
 .photoList {
   padding: $spacing-md $page-padding;
-}
-
-.listTitle {
-  font-size: $font-size-md;
-  font-weight: $font-weight-semibold;
-  color: $color-text-primary;
-  margin-bottom: $spacing-md;
-  padding-left: $spacing-xs;
 }
 
 .photoItem {
@@ -55,6 +162,18 @@
   padding: $spacing-md;
   margin-bottom: $spacing-md;
   box-shadow: $shadow-card;
+  transition: all $transition-fast;
+
+  &.itemActive {
+    outline: 3rpx solid $color-primary;
+    transform: translateY(-4rpx);
+    box-shadow: 0 8rpx 24rpx rgba(45, 127, 249, 0.2);
+  }
+
+  &.itemRejected {
+    border: 2rpx solid $color-error;
+    background: rgba(239, 68, 68, 0.02);
+  }
 
   .photoHeader {
     display: flex;
@@ -70,22 +189,14 @@
   }
 
   .photoContent {
-    position: relative;
-    width: 100%;
+    background: $color-bg-section;
     border-radius: $radius-md;
     overflow: hidden;
     margin-bottom: $spacing-md;
 
     .photo {
       width: 100%;
-      height: 300rpx;
-      display: block;
-    }
-
-    .statusBadge {
-      position: absolute;
-      top: $spacing-sm;
-      right: $spacing-sm;
+      height: 380rpx;
     }
   }
 
@@ -96,15 +207,16 @@
     margin-bottom: $spacing-md;
 
     .rejectLabel {
-      font-size: $font-size-sm;
-      font-weight: $font-weight-semibold;
+      font-size: $font-size-xs;
       color: $color-error;
+      font-weight: $font-weight-semibold;
       margin-bottom: $spacing-xs;
     }
 
     .rejectReason {
       font-size: $font-size-sm;
       color: $color-error;
+      line-height: 1.6;
     }
   }
 
@@ -114,123 +226,78 @@
 
     .btn {
       flex: 1;
-      height: $button-height-md;
+      height: 80rpx;
       border-radius: $radius-button;
       display: flex;
       align-items: center;
       justify-content: center;
       font-size: $font-size-sm;
-      font-weight: $font-weight-medium;
-      transition: all $transition-fast;
-
-      &:active {
-        opacity: 0.9;
-        transform: scale(0.98);
-      }
+      font-weight: $font-weight-semibold;
 
       &.approve {
-        background: $color-success;
-        color: $color-text-white;
+        background: $color-success-bg;
+        color: $color-success;
       }
-
       &.reject {
         background: $color-error-bg;
         color: $color-error;
+      }
+      &.secondary {
+        background: $color-primary-bg;
+        color: $color-primary;
+      }
+      &.warning {
+        background: $color-warning-bg;
+        color: $color-warning;
+      }
+
+      &:active {
+        opacity: 0.85;
+        transform: scale(0.99);
       }
     }
   }
 }
 
-.rejectModal {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 100;
+.statsBanner {
   display: flex;
-  align-items: flex-end;
+  gap: $spacing-xs;
+  padding: $spacing-sm $page-padding;
+  background: $color-bg-card;
+  border-top: 1rpx solid $color-divider;
+  border-bottom: 1rpx solid $color-divider;
 
-  .modalContent {
-    width: 100%;
-    background: $color-bg-card;
-    border-radius: $radius-lg $radius-lg 0 0;
-    padding: $spacing-lg;
-    padding-bottom: calc($spacing-lg + env(safe-area-inset-bottom));
+  .bannerItem {
+    flex: 1;
+    text-align: center;
+    padding: $spacing-xs 0;
+    border-radius: $radius-sm;
+    background: $color-bg-section;
 
-    .modalTitle {
-      font-size: $font-size-lg;
-      font-weight: $font-weight-semibold;
+    .bannerNum {
+      font-size: 32rpx;
+      font-weight: $font-weight-bold;
+      display: block;
+      margin-bottom: 2rpx;
       color: $color-text-primary;
-      text-align: center;
-      margin-bottom: $spacing-lg;
     }
 
-    .reasonGrid {
-      display: flex;
-      flex-wrap: wrap;
-      gap: $spacing-md;
-      margin-bottom: $spacing-xl;
-
-      .reasonItem {
-        width: calc((100% - 24rpx * 2) / 3);
-        padding: $spacing-md;
-        border: 2rpx solid $color-border;
-        border-radius: $radius-md;
-        text-align: center;
-        transition: all $transition-fast;
-
-        .reasonIcon {
-          font-size: 40rpx;
-          margin-bottom: $spacing-xs;
-        }
-
-        .reasonLabel {
-          font-size: $font-size-sm;
-          color: $color-text-secondary;
-        }
-
-        &.selected {
-          border-color: $color-error;
-          background: $color-error-bg;
-
-          .reasonLabel {
-            color: $color-error;
-            font-weight: $font-weight-medium;
-          }
-        }
-
-        &:active {
-          opacity: 0.8;
-        }
-      }
+    .bannerLabel {
+      font-size: 20rpx;
+      color: $color-text-tertiary;
     }
 
-    .modalButtons {
-      display: flex;
-      gap: $spacing-md;
-
-      .btn {
-        flex: 1;
-        height: $button-height-lg;
-        border-radius: $radius-button;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: $font-size-md;
-        font-weight: $font-weight-medium;
-
-        &.cancel {
-          background: $color-bg-section;
-          color: $color-text-secondary;
-        }
-
-        &.confirm {
-          background: $color-error;
-          color: $color-text-white;
-        }
-      }
+    &.bannerOk {
+      background: $color-success-bg;
+      .bannerNum { color: $color-success; }
+    }
+    &.bannerFail {
+      background: $color-error-bg;
+      .bannerNum { color: $color-error; }
+    }
+    &.bannerPending {
+      background: $color-warning-bg;
+      .bannerNum { color: $color-warning; }
     }
   }
 }
@@ -245,7 +312,7 @@
   padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
   box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
   display: flex;
-  gap: $spacing-md;
+  gap: $spacing-sm;
 
   .btn {
     flex: 1;
@@ -254,23 +321,155 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: $font-size-md;
+    font-size: $font-size-sm;
     font-weight: $font-weight-semibold;
     transition: all $transition-fast;
-
-    &:active {
-      opacity: 0.9;
-      transform: scale(0.98);
-    }
 
     &.secondary {
       background: $color-bg-section;
       color: $color-text-secondary;
     }
 
+    &.ghost {
+      background: $color-success-bg;
+      color: $color-success;
+    }
+
     &.primary {
       background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
       color: $color-text-white;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+
+    &:active {
+      transform: scale(0.99);
+      opacity: 0.9;
+    }
+  }
+}
+
+.emptyState {
+  text-align: center;
+  padding: 200rpx $page-padding;
+
+  .emptyIcon {
+    font-size: 120rpx;
+    display: block;
+    margin-bottom: $spacing-md;
+  }
+
+  .emptyText {
+    font-size: $font-size-md;
+    color: $color-text-tertiary;
+  }
+}
+
+.rejectModal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  padding: $page-padding;
+
+  .modalContent {
+    width: 100%;
+    background: $color-bg-card;
+    border-radius: $radius-lg;
+    padding: $spacing-xl $spacing-lg $spacing-lg;
+    max-height: 80vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+
+    .modalTitle {
+      font-size: $font-size-lg;
+      font-weight: $font-weight-bold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-lg;
+      text-align: center;
+    }
+
+    .reasonGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: $spacing-sm;
+      margin-bottom: $spacing-xl;
+      flex: 1;
+      overflow-y: auto;
+    }
+
+    .reasonItem {
+      padding: $spacing-md;
+      background: $color-bg-section;
+      border-radius: $radius-md;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: $spacing-sm;
+      border: 2rpx solid transparent;
+      transition: all $transition-fast;
+
+      &.selected {
+        background: $color-primary-bg;
+        border-color: $color-primary;
+
+        .reasonLabel {
+          color: $color-primary;
+          font-weight: $font-weight-semibold;
+        }
+      }
+
+      .reasonIcon {
+        font-size: 44rpx;
+      }
+
+      .reasonLabel {
+        font-size: $font-size-sm;
+        color: $color-text-primary;
+        text-align: center;
+      }
+    }
+
+    .modalButtons {
+      display: flex;
+      gap: $spacing-md;
+      margin-top: auto;
+
+      .btn {
+        flex: 1;
+        height: $button-height-lg;
+        border-radius: $radius-button;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: $font-size-md;
+        font-weight: $font-weight-semibold;
+
+        &.cancel {
+          background: $color-bg-section;
+          color: $color-text-secondary;
+        }
+
+        &.confirm {
+          background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+          color: $color-text-white;
+        }
+
+        &.disabled {
+          opacity: 0.5;
+          pointer-events: none;
+        }
+      }
     }
   }
 }

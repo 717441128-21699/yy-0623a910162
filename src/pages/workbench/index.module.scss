@@ -58,15 +58,9 @@
     border-radius: $radius-md;
     transition: background $transition-base;
 
-    &.pending {
-      background: rgba(45, 127, 249, 0.06);
-    }
-    &.approved {
-      background: rgba(52, 211, 153, 0.06);
-    }
-    &.rejected {
-      background: rgba(239, 68, 68, 0.06);
-    }
+    &.pending { background: rgba(45, 127, 249, 0.06); }
+    &.approved { background: rgba(52, 211, 153, 0.06); }
+    &.rejected { background: rgba(239, 68, 68, 0.06); }
 
     .statNum {
       font-size: 48rpx;
@@ -86,12 +80,158 @@
   }
 }
 
+.filterBar {
+  display: flex;
+  gap: $spacing-sm;
+  padding: $spacing-md $page-padding;
+  background: $color-bg-page;
+  align-items: center;
+
+  .searchBox {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    background: $color-bg-card;
+    border-radius: $radius-button;
+    padding: 0 $spacing-md;
+    height: 72rpx;
+    box-shadow: $shadow-card;
+
+    .searchIcon {
+      font-size: $font-size-md;
+      margin-right: $spacing-xs;
+      opacity: 0.6;
+    }
+
+    .searchInput {
+      flex: 1;
+      font-size: $font-size-sm;
+      color: $color-text-primary;
+      height: 100%;
+    }
+
+    .searchPlaceholder {
+      color: $color-text-tertiary;
+      font-size: $font-size-sm;
+    }
+
+    .clearBtn {
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+      padding: 0 $spacing-xs;
+    }
+  }
+
+  .filterBtn {
+    display: flex;
+    align-items: center;
+    gap: 4rpx;
+    background: $color-bg-card;
+    border-radius: $radius-button;
+    padding: 0 $spacing-md;
+    height: 72rpx;
+    box-shadow: $shadow-card;
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    white-space: nowrap;
+
+    .filterIcon {
+      font-size: $font-size-md;
+    }
+
+    .filterText {
+      max-width: 120rpx;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &.togglePanel {
+      padding: 0 $spacing-md;
+    }
+  }
+}
+
+.filterPanel {
+  margin: 0 $page-padding $spacing-md;
+  padding: $spacing-md;
+  background: $color-bg-card;
+  border-radius: $radius-lg;
+  box-shadow: $shadow-card;
+
+  .panelRow {
+    margin-bottom: $spacing-md;
+
+    &:last-of-type {
+      margin-bottom: $spacing-sm;
+    }
+
+    .panelLabel {
+      font-size: $font-size-sm;
+      font-weight: $font-weight-semibold;
+      color: $color-text-primary;
+      margin-bottom: $spacing-sm;
+    }
+
+    .chipList {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-xs;
+    }
+
+    .chip {
+      padding: $spacing-xs $spacing-md;
+      border-radius: $radius-round;
+      background: $color-bg-section;
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+
+      &.chipActive {
+        background: $color-primary-bg;
+        color: $color-primary;
+        font-weight: $font-weight-medium;
+      }
+    }
+  }
+
+  .panelActions {
+    padding-top: $spacing-sm;
+    border-top: 1rpx solid $color-divider;
+
+    .resetBtn {
+      display: inline-block;
+      padding: $spacing-xs $spacing-md;
+      background: $color-bg-section;
+      border-radius: $radius-button;
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+    }
+  }
+}
+
+.filterHint {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 0 $page-padding $spacing-sm;
+  padding: $spacing-xs $spacing-md;
+  background: $color-primary-bg;
+  border-radius: $radius-sm;
+  font-size: $font-size-xs;
+  color: $color-primary;
+
+  .hintReset {
+    font-weight: $font-weight-medium;
+    text-decoration: underline;
+  }
+}
+
 .tabs {
   display: flex;
   background: $color-bg-card;
   padding: 0 $spacing-md;
   border-bottom: 1rpx solid $color-divider;
-  margin-top: $spacing-lg;
+  margin-top: $spacing-sm;
   position: sticky;
   top: 0;
   z-index: 10;
@@ -185,6 +325,26 @@
       .time {
         font-size: $font-size-xs;
         color: $color-text-tertiary;
+        margin-bottom: 6rpx;
+      }
+
+      .tagsRow {
+        display: flex;
+        gap: $spacing-xs;
+        flex-wrap: wrap;
+
+        .miniTag {
+          padding: 2rpx 10rpx;
+          border-radius: $radius-round;
+          background: $color-bg-section;
+          font-size: 20rpx;
+          color: $color-text-secondary;
+
+          &.tagReviewer {
+            background: rgba(45, 127, 249, 0.1);
+            color: $color-primary;
+          }
+        }
       }
     }
 
@@ -197,6 +357,7 @@
     display: flex;
     gap: $spacing-xs;
     margin-bottom: $spacing-md;
+    align-items: center;
 
     .previewWrapper {
       flex: 1;
@@ -222,13 +383,23 @@
         color: $color-text-white;
         font-weight: $font-weight-bold;
 
-        &.miniApproved {
-          background: $color-success;
-        }
-        &.miniRejected {
-          background: $color-error;
-        }
+        &.miniApproved { background: $color-success; }
+        &.miniRejected { background: $color-error; }
       }
+    }
+
+    .morePhotos {
+      flex-shrink: 0;
+      width: 110rpx;
+      height: 110rpx;
+      border-radius: $radius-sm;
+      background: $color-bg-section;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: $font-size-sm;
+      color: $color-text-tertiary;
+      font-weight: $font-weight-semibold;
     }
   }
 
@@ -239,18 +410,34 @@
     padding-top: $spacing-md;
     border-top: 1rpx solid $color-divider;
 
-    .appointment {
-      font-size: $font-size-sm;
-      color: $color-text-secondary;
+    .photoMeta {
+      .photoCount {
+        display: flex;
+        flex-direction: column;
+        gap: 4rpx;
+        font-size: $font-size-xs;
+
+        .countGreen { color: $color-success; }
+        .countRed { color: $color-error; }
+        .countBlue { color: $color-primary; }
+      }
     }
 
-    .reviewBtn {
-      padding: $spacing-sm $spacing-lg;
-      background: $color-bg-section;
+    .footerActions {
+      display: flex;
+      gap: $spacing-sm;
+    }
+
+    .footerBtn {
+      padding: $spacing-sm $spacing-md;
       border-radius: $radius-button;
-      font-size: $font-size-sm;
-      color: $color-text-secondary;
+      font-size: $font-size-xs;
       font-weight: $font-weight-medium;
+
+      &.ghost {
+        background: $color-bg-section;
+        color: $color-text-secondary;
+      }
 
       &.primary {
         background: $color-primary;
@@ -272,6 +459,6 @@
   .emptyText {
     font-size: $font-size-md;
     color: $color-text-tertiary;
-    line-height: 1.5;
+    line-height: 1.6;
   }
 }

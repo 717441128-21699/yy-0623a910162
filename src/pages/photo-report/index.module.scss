@@ -1,0 +1,418 @@
+@use '@/styles/variables.scss' as *;
+
+.container {
+  min-height: 100vh;
+  background: $color-bg-page;
+  padding-bottom: 160rpx;
+}
+
+.header {
+  background: linear-gradient(135deg, $color-primary 0%, $color-primary-light 100%);
+  padding: $spacing-xl $page-padding;
+  color: $color-text-white;
+
+  .title {
+    font-size: $font-size-xl;
+    font-weight: $font-weight-bold;
+    margin-bottom: $spacing-sm;
+  }
+
+  .subtitle {
+    font-size: $font-size-sm;
+    opacity: 0.9;
+    margin-bottom: $spacing-lg;
+  }
+
+  .statusBadge {
+    display: inline-flex;
+    align-items: center;
+    padding: 8rpx 20rpx;
+    border-radius: $radius-round;
+    font-size: $font-size-xs;
+    font-weight: $font-weight-semibold;
+    background: rgba(255, 255, 255, 0.22);
+  }
+}
+
+.summarySection {
+  padding: 0 $page-padding;
+  margin-top: -$spacing-lg;
+
+  .summaryCard {
+    background: $color-bg-card;
+    border-radius: $radius-lg;
+    padding: $spacing-lg;
+    box-shadow: $shadow-card;
+
+    .metaRow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: $spacing-md $spacing-lg;
+      margin-bottom: $spacing-lg;
+      padding-bottom: $spacing-lg;
+      border-bottom: 1rpx solid $color-divider;
+
+      .metaItem {
+        .label {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+          margin-bottom: 4rpx;
+        }
+
+        .value {
+          font-size: $font-size-md;
+          font-weight: $font-weight-semibold;
+          color: $color-text-primary;
+        }
+      }
+    }
+
+    .progressRow {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+
+      .progressRing {
+        position: relative;
+        width: 140rpx;
+        height: 140rpx;
+        border-radius: $radius-round;
+        background: conic-gradient($color-primary var(--p, 0%), $color-bg-section 0%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 10rpx;
+          border-radius: $radius-round;
+          background: $color-bg-card;
+        }
+
+        .ringText {
+          position: relative;
+          font-size: $font-size-xl;
+          font-weight: $font-weight-bold;
+          color: $color-primary;
+        }
+      }
+
+      .stats {
+        flex: 1;
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: $spacing-sm;
+
+        .statBox {
+          text-align: center;
+          padding: $spacing-sm 0;
+          border-radius: $radius-md;
+
+          .num {
+            font-size: $font-size-lg;
+            font-weight: $font-weight-bold;
+            margin-bottom: 4rpx;
+          }
+
+          .label {
+            font-size: $font-size-xs;
+            color: $color-text-tertiary;
+          }
+
+          &.statSubmitted {
+            background: $color-primary-bg;
+            .num { color: $color-primary; }
+          }
+          &.statApproved {
+            background: $color-success-bg;
+            .num { color: $color-success; }
+          }
+          &.statRejected {
+            background: $color-error-bg;
+            .num { color: $color-error; }
+          }
+          &.statPending {
+            background: rgba(107, 114, 128, 0.08);
+            .num { color: $color-text-secondary; }
+          }
+          &.statMissing {
+            background: rgba(245, 158, 11, 0.08);
+            .num { color: $color-warning; }
+          }
+        }
+      }
+    }
+  }
+}
+
+.photoSection {
+  padding: $spacing-lg $page-padding 0;
+
+  .sectionTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-md;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+
+    .count {
+      font-size: $font-size-xs;
+      color: $color-text-tertiary;
+      font-weight: normal;
+    }
+  }
+
+  .photoGrid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: $spacing-md;
+  }
+
+  .photoCard {
+    background: $color-bg-card;
+    border-radius: $radius-md;
+    overflow: hidden;
+    box-shadow: $shadow-card;
+    position: relative;
+
+    .photoWrap {
+      width: 100%;
+      height: 200rpx;
+      position: relative;
+
+      .photo {
+        width: 100%;
+        height: 100%;
+      }
+
+      .placeholder {
+        width: 100%;
+        height: 100%;
+        background: $color-bg-section;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        gap: $spacing-xs;
+
+        .phIcon {
+          font-size: 56rpx;
+          opacity: 0.6;
+        }
+
+        .phText {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+        }
+      }
+
+      .statusTag {
+        position: absolute;
+        top: $spacing-sm;
+        right: $spacing-sm;
+        padding: 4rpx 12rpx;
+        border-radius: $radius-round;
+        font-size: 20rpx;
+        font-weight: $font-weight-semibold;
+
+        &.tagSubmitted {
+          background: $color-primary;
+          color: $color-text-white;
+        }
+        &.tagApproved {
+          background: $color-success;
+          color: $color-text-white;
+        }
+        &.tagRejected {
+          background: $color-error;
+          color: $color-text-white;
+        }
+        &.tagMissing {
+          background: $color-warning;
+          color: $color-text-white;
+        }
+      }
+    }
+
+    .cardFooter {
+      padding: $spacing-sm $spacing-sm $spacing-md;
+
+      .name {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+      }
+
+      .time {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+      }
+
+      .reason {
+        margin-top: $spacing-xs;
+        padding: $spacing-xs;
+        background: $color-error-bg;
+        border-radius: $radius-sm;
+        font-size: $font-size-xs;
+        color: $color-error;
+        line-height: 1.5;
+      }
+    }
+
+    &.cardMissing {
+      border: 2rpx dashed $color-warning;
+      background: rgba(245, 158, 11, 0.04);
+    }
+
+    &.cardRejected {
+      border: 2rpx solid $color-error;
+    }
+  }
+}
+
+.timeline {
+  padding: $spacing-lg $page-padding;
+
+  .tlTitle {
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-lg;
+  }
+
+  .tlList {
+    position: relative;
+    padding-left: $spacing-xl;
+
+    &::before {
+      content: '';
+      position: absolute;
+      left: 15rpx;
+      top: 8rpx;
+      bottom: 8rpx;
+      width: 2rpx;
+      background: $color-divider;
+    }
+
+    .tlItem {
+      position: relative;
+      padding-bottom: $spacing-lg;
+
+      &:last-child {
+        padding-bottom: 0;
+      }
+
+      &::before {
+        content: '';
+        position: absolute;
+        left: -36rpx;
+        top: 8rpx;
+        width: 20rpx;
+        height: 20rpx;
+        border-radius: $radius-round;
+        background: $color-primary;
+        border: 4rpx solid $color-bg-page;
+      }
+
+      &.itemDone::before { background: $color-success; }
+      &.itemWarn::before { background: $color-warning; }
+      &.itemError::before { background: $color-error; }
+      &.itemNext::before {
+        background: transparent;
+        border: 4rpx dashed $color-text-tertiary;
+      }
+
+      .time {
+        font-size: $font-size-xs;
+        color: $color-text-tertiary;
+        margin-bottom: 4rpx;
+      }
+
+      .label {
+        font-size: $font-size-sm;
+        font-weight: $font-weight-semibold;
+        color: $color-text-primary;
+        margin-bottom: 4rpx;
+      }
+
+      .desc {
+        font-size: $font-size-xs;
+        color: $color-text-secondary;
+        line-height: 1.5;
+      }
+    }
+  }
+}
+
+.doctorNote {
+  margin: 0 $page-padding $spacing-lg;
+  background: $color-bg-card;
+  border-radius: $radius-md;
+  padding: $spacing-md;
+  border-left: 6rpx solid $color-primary;
+
+  .noteTitle {
+    font-size: $font-size-sm;
+    font-weight: $font-weight-semibold;
+    color: $color-text-primary;
+    margin-bottom: $spacing-sm;
+    display: flex;
+    align-items: center;
+    gap: $spacing-xs;
+  }
+
+  .noteText {
+    font-size: $font-size-sm;
+    color: $color-text-secondary;
+    line-height: 1.6;
+  }
+}
+
+.bottomBar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: $color-bg-card;
+  padding: $spacing-md $page-padding;
+  padding-bottom: calc($spacing-md + env(safe-area-inset-bottom));
+  box-shadow: 0 -4rpx 20rpx rgba(0, 0, 0, 0.06);
+  display: flex;
+  gap: $spacing-md;
+
+  .btn {
+    flex: 1;
+    height: $button-height-lg;
+    border-radius: $radius-button;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: $font-size-md;
+    font-weight: $font-weight-semibold;
+
+    &.secondary {
+      background: $color-bg-section;
+      color: $color-text-secondary;
+    }
+
+    &.primary {
+      background: linear-gradient(90deg, $color-primary 0%, $color-primary-light 100%);
+      color: $color-text-white;
+    }
+
+    &.warning {
+      background: $color-warning;
+      color: $color-text-white;
+    }
+
+    &.disabled {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+  }
+}

@@ -52,9 +52,20 @@ const PhotoConfirmPage: React.FC = () => {
       });
 
       setTimeout(() => {
-        Taro.navigateBack();
-      }, 1200);
-    }, 800);
+        try {
+          const pages = Taro.getCurrentPages();
+          if (pages.length >= 3) {
+            Taro.navigateBack({ delta: 2 });
+          } else if (pages.length >= 2) {
+            Taro.navigateBack({ delta: 1 });
+          } else {
+            Taro.redirectTo({ url: '/pages/photo-task/index' });
+          }
+        } catch (e) {
+          Taro.redirectTo({ url: '/pages/photo-task/index' });
+        }
+      }, 1000);
+    }, 700);
   };
 
   const toggleClear = () => setIsClear(!isClear);

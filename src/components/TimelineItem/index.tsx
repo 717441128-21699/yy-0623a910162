@@ -11,6 +11,13 @@ interface TimelineItemProps {
   description: string;
   photos: string[];
   doctorNote?: string;
+  reviewStatus?: 'pending' | 'approved' | 'rejected';
+  reviewSummary?: {
+    approvedCount: number;
+    rejectedCount: number;
+    reviewedAt?: string;
+    reviewedBy?: string;
+  };
   isLast?: boolean;
   onClick?: () => void;
 }
@@ -22,6 +29,8 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
   description,
   photos,
   doctorNote,
+  reviewStatus,
+  reviewSummary,
   isLast = false,
   onClick
 }) => {
@@ -42,8 +51,23 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
       <View className={styles.content} onClick={onClick}>
         <View className={styles.header}>
           <Text className={styles.date}>{date}</Text>
-          <View className={classnames(styles.typeTag, type === 'clinic_photo' && styles.typeClinic)}>
-            <Text className={styles.typeText}>{typeLabel}</Text>
+          <View className={styles.headerRight}>
+            {reviewSummary && (
+              <View className={styles.reviewPill}>
+                {reviewSummary.rejectedCount > 0 ? (
+                  <Text className={styles.pillFail}>
+                    ✗ {reviewSummary.rejectedCount}需重拍
+                  </Text>
+                ) : reviewSummary.approvedCount > 0 ? (
+                  <Text className={styles.pillOk}>
+                    ✓ {reviewSummary.approvedCount}通过
+                  </Text>
+                ) : null}
+              </View>
+            )}
+            <View className={classnames(styles.typeTag, type === 'clinic_photo' && styles.typeClinic)}>
+              <Text className={styles.typeText}>{typeLabel}</Text>
+            </View>
           </View>
         </View>
 
@@ -62,6 +86,11 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
               }}
             />
           ))}
+          {photos.length > 5 && (
+            <View className={styles.morePhoto}>
+              <Text className={styles.moreText}>+{photos.length - 5}</Text>
+            </View>
+          )}
         </View>
 
         {doctorNote && (
@@ -76,3 +105,4 @@ const TimelineItem: React.FC<TimelineItemProps> = ({
 };
 
 export default TimelineItem;
+

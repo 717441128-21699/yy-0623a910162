@@ -11,6 +11,7 @@ export interface PhotoItem {
   status: 'pending' | 'submitted' | 'approved' | 'rejected';
   userPhoto?: string;
   rejectReason?: string;
+  submittedAt?: string;
 }
 
 // 拍照任务类型
@@ -19,11 +20,16 @@ export interface PhotoTask {
   title: string;
   deadline: string;
   appointmentDate: string;
+  appointmentId?: string;
   doctorName: string;
   items: PhotoItem[];
   totalCount: number;
   completedCount: number;
   status: 'pending' | 'in_progress' | 'submitted' | 'reviewing' | 'approved' | 'rejected';
+  submittedAt?: string;
+  reviewedAt?: string;
+  reviewTaskId?: string;
+  overallNote?: string;
 }
 
 // 历史记录类型
@@ -34,8 +40,19 @@ export interface HistoryRecord {
   type: 'self_photo' | 'clinic_photo';
   typeLabel: string;
   photos: string[];
+  photoNames?: string[];
   description: string;
   doctorNote?: string;
+  appointmentId?: string;
+  appointmentDate?: string;
+  reviewStatus?: 'pending' | 'approved' | 'rejected';
+  reviewSummary?: {
+    approvedCount: number;
+    rejectedCount: number;
+    reviewedAt?: string;
+    reviewedBy?: string;
+  };
+  rejectedItems?: { name: string; reason: string }[];
 }
 
 // 待核对任务类型
@@ -45,9 +62,13 @@ export interface ReviewTask {
   patientAvatar: string;
   submitTime: string;
   appointmentDate: string;
+  appointmentId?: string;
   photoCount: number;
-  status: 'pending' | 'approved' | 'rejected';
+  status: 'pending' | 'approved' | 'rejected' | 'reviewing';
   photos: ReviewPhoto[];
+  reviewedAt?: string;
+  reviewedBy?: string;
+  overallNote?: string;
 }
 
 export interface ReviewPhoto {
@@ -56,6 +77,7 @@ export interface ReviewPhoto {
   url: string;
   status: 'pending' | 'approved' | 'rejected';
   rejectReason?: string;
+  reviewedAt?: string;
 }
 
 // 不合格原因类型

@@ -6,7 +6,9 @@ export default defineAppConfig({
     'pages/photo-task/index',
     'pages/capture-guide/index',
     'pages/photo-confirm/index',
+    'pages/photo-report/index',
     'pages/history/index',
+    'pages/history-detail/index',
     'pages/review-detail/index',
     'pages/compare/index'
   ],
