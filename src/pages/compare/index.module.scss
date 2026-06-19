@@ -6,6 +6,27 @@
   padding-bottom: 40rpx;
 }
 
+.matchHint {
+  margin: $spacing-md $page-padding;
+  margin-bottom: 0;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $radius-card;
+  font-size: $font-size-xs;
+  font-weight: $font-weight-medium;
+
+  &.hintOk {
+    background: $color-success-bg;
+    color: $color-success;
+    border: 1rpx solid rgba($color-success, 0.2);
+  }
+
+  &.hintWarn {
+    background: $color-warning-bg;
+    color: $color-warning;
+    border: 1rpx solid rgba($color-warning, 0.25);
+  }
+}
+
 .selector {
   background: $color-bg-card;
   padding: $spacing-md $page-padding;
@@ -19,6 +40,8 @@
     background: $color-bg-section;
     border-radius: $radius-md;
     text-align: center;
+    transition: all $transition-fast;
+    border: 2rpx solid transparent;
 
     .label {
       font-size: $font-size-xs;
@@ -31,6 +54,24 @@
       color: $color-text-primary;
       font-weight: $font-weight-medium;
       @include text-ellipsis;
+    }
+
+    .subLabel {
+      font-size: $font-size-xs;
+      color: $color-text-secondary;
+      margin-top: $spacing-xs;
+    }
+
+    .emptyVal {
+      font-size: $font-size-sm;
+      color: $color-primary;
+      font-weight: $font-weight-medium;
+      margin-top: $spacing-xs;
+    }
+
+    &.missing {
+      border: 2rpx dashed rgba($color-warning, 0.45);
+      background: rgba($color-warning, 0.06);
     }
 
     &:active {
@@ -84,6 +125,12 @@
   .compareItem {
     flex: 1;
 
+    &.missingItem {
+      .photoWrapper {
+        border: 2rpx dashed rgba($color-warning, 0.45);
+      }
+    }
+
     .itemHeader {
       display: flex;
       align-items: center;
@@ -113,6 +160,34 @@
       .photo {
         width: 100%;
         height: 100%;
+      }
+
+      .emptyPhoto {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: $spacing-xs;
+        background: linear-gradient(135deg, $color-bg-section 0%, $color-bg-card 100%);
+
+        .emptyIcon {
+          font-size: 64rpx;
+          margin-bottom: $spacing-xs;
+          opacity: 0.7;
+        }
+
+        .emptyPhotoText {
+          font-size: $font-size-sm;
+          color: $color-text-secondary;
+          font-weight: $font-weight-medium;
+        }
+
+        .emptyPhotoSub {
+          font-size: $font-size-xs;
+          color: $color-text-tertiary;
+        }
       }
     }
   }

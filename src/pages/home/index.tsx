@@ -31,6 +31,14 @@ const HomePage: React.FC = () => {
     });
   };
 
+  const handleGoReport = () => {
+    Taro.navigateTo({
+      url: '/pages/photo-report/index?from=patient'
+    });
+  };
+
+  const hasReportView = task.status === 'reviewing' || task.status === 'approved' || task.status === 'rejected';
+
   const handleGoHistory = () => {
     Taro.navigateTo({
       url: '/pages/history/index'
@@ -144,10 +152,23 @@ const HomePage: React.FC = () => {
               已完成 {task.completedCount} / {task.totalCount} 张
             </Text>
           </View>
-          <View className={styles.goBtn}>
-            <Text>
-              {task.status === 'approved' ? '查看' : task.status === 'rejected' ? '去重拍' : '去拍照'}
-            </Text>
+          <View className={styles.footerActions}>
+            {hasReportView && (
+              <View
+                className={classnames(styles.goBtn, styles.btnSecondary)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleGoReport();
+                }}
+              >
+                <Text>看报告</Text>
+              </View>
+            )}
+            <View className={styles.goBtn}>
+              <Text>
+                {task.status === 'approved' ? '查看' : task.status === 'rejected' ? '去重拍' : '去拍照'}
+              </Text>
+            </View>
           </View>
         </View>
       </View>

@@ -59,14 +59,15 @@ const HistoryPage: React.FC = () => {
   const handleMonthChange = (m: string) => setActiveMonth(m);
   const handleTypeChange = (t: typeof activeType) => setActiveType(t);
 
-  const handleGoCompare = () => {
+  const handleGoCompare = (aptId?: string) => {
     if (historyRecords.length < 2) {
       Taro.showToast({ title: '至少需要2次记录才能对比', icon: 'none' });
       return;
     }
-    Taro.navigateTo({
-      url: '/pages/compare/index'
-    });
+    const url = aptId
+      ? `/pages/compare/index?appointmentId=${aptId}`
+      : '/pages/compare/index';
+    Taro.navigateTo({ url });
   };
 
   const handleRecordClick = (recordId: string) => {
@@ -240,7 +241,7 @@ const HistoryPage: React.FC = () => {
                   ))}
 
                   {group.records.length >= 2 && (
-                    <View className={styles.compareHint} onClick={handleGoCompare}>
+                    <View className={styles.compareHint} onClick={() => handleGoCompare(group.appointmentId)}>
                       <Text>📊 点击对比本次自拍与诊室拍摄 →</Text>
                     </View>
                   )}

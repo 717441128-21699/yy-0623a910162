@@ -177,9 +177,13 @@ const ReviewDetailPage: React.FC = () => {
       Taro.showToast({
         title: `审核完成\n通过${ok}张，重拍${fail}张`,
         icon: 'none',
-        duration: 2000
+        duration: 1500
       });
-      setTimeout(() => Taro.navigateBack(), 2000);
+      setTimeout(() => {
+        Taro.redirectTo({
+          url: `/pages/photo-report/index?from=staff&reviewId=${task?.id || ''}`
+        });
+      }, 1500);
     }, 800);
   };
 

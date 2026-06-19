@@ -224,6 +224,12 @@
       }
     }
 
+    .footerActions {
+      display: flex;
+      gap: $spacing-sm;
+      align-items: center;
+    }
+
     .goBtn {
       padding: $spacing-sm $spacing-lg;
       background: rgba(255, 255, 255, 0.2);
@@ -231,6 +237,11 @@
       font-size: $font-size-sm;
       color: $color-text-white;
       font-weight: $font-weight-medium;
+
+      &.btnSecondary {
+        background: rgba(255, 255, 255, 0.92);
+        color: $color-primary;
+      }
     }
   }
 

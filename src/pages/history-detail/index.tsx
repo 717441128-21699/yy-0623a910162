@@ -41,9 +41,15 @@ const HistoryDetailPage: React.FC = () => {
       Taro.showToast({ title: '记录不足，无法对比', icon: 'none' });
       return;
     }
-    Taro.navigateTo({
-      url: `/pages/compare/index`
-    });
+    const aptId = record?.appointmentId || '';
+    const leftId = record?.type === 'self_photo' ? record.id : relatedRecords.find(r => r.type === 'self_photo')?.id || '';
+    const rightId = record?.type === 'clinic_photo' ? record.id : relatedRecords.find(r => r.type === 'clinic_photo')?.id || '';
+    let url = '/pages/compare/index?';
+    const params: string[] = [];
+    if (aptId) params.push(`appointmentId=${aptId}`);
+    if (leftId) params.push(`leftId=${leftId}`);
+    if (rightId) params.push(`rightId=${rightId}`);
+    Taro.navigateTo({ url: url + params.join('&') });
   };
 
   const handleGoClinic = () => {

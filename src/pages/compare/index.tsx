@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { View, Text, Image, Slider, ScrollView } from '@tarojs/components';
-import Taro from '@tarojs/taro';
+import Taro, { useRouter } from '@tarojs/taro';
 import styles from './index.module.scss';
 import { useApp } from '@/store';
 import { HistoryRecord } from '@/types';
@@ -9,20 +9,74 @@ import classnames from 'classnames';
 const photoTypes = ['正面咬合照', '左侧咬合照', '右侧咬合照', '上牙弓照', '下牙弓照'];
 const PLACEHOLDER = 'https://picsum.photos/id/64/600/600';
 
-const getPhotoAt = (record: HistoryRecord, index: number): string => {
+const getPhotoAt = (record: HistoryRecord | null, index: number): string => {
   if (!record || !record.photos || record.photos.length === 0) return PLACEHOLDER;
   return record.photos[index % record.photos.length];
 };
 
 const ComparePage: React.FC = () => {
+  const router = useRouter();
   const { state } = useApp();
   const records = state.historyRecords;
 
-  const defaultLeft = records.length > 1 ? records[records.length - 1] : records[0];
-  const defaultRight = records[0];
+  const appointmentId = router.params.appointmentId || '';
+  const leftIdParam = router.params.leftId || '';
+  const rightIdParam = router.params.rightId || '';
 
-  const [leftRecord, setLeftRecord] = useState<HistoryRecord>(defaultLeft);
-  const [rightRecord, setRightRecord] = useState<HistoryRecord>(defaultRight);
+  const { defaultLeft, defaultRight, matchHint, matchType } = useMemo(() => {
+    let left: HistoryRecord | null = null;
+    let right: HistoryRecord | null = null;
+    let hint = '';
+    let mType: 'appointment' | 'explicit' | 'fallback' = 'fallback';
+
+    if (appointmentId) {
+      const group = records.filter(r => r.appointmentId === appointmentId);
+      const self = group.find(r => r.type === 'self_photo') || null;
+      const clinic = group.find(r => r.type === 'clinic_photo') || null;
+
+      if (self && clinic) {
+        left = self;
+        right = clinic;
+        mType = 'appointment';
+        hint = '已匹配本次复诊的自拍（左）与诊室拍摄（右）';
+      } else if (self && !clinic) {
+        left = self;
+        const others = records.filter(r => r.type === 'clinic_photo');
+        right = others.length > 0 ? others[0] : null;
+        mType = 'appointment';
+        hint = '⚠️ 本次复诊暂无诊室拍摄，已用最近一次诊室拍摄对比';
+      } else if (!self && clinic) {
+        right = clinic;
+        const others = records.filter(r => r.type === 'self_photo');
+        left = others.length > 0 ? others[0] : null;
+        mType = 'appointment';
+        hint = '⚠️ 本次复诊暂无自助拍照，已用最近一次自拍对比';
+      } else {
+        hint = '⚠️ 本次复诊尚未找到拍摄记录';
+      }
+    }
+
+    if (leftIdParam) {
+      const r = records.find(x => x.id === leftIdParam);
+      if (r) { left = r; mType = 'explicit'; }
+    }
+    if (rightIdParam) {
+      const r = records.find(x => x.id === rightIdParam);
+      if (r) { right = r; mType = 'explicit'; }
+    }
+
+    if (!left && records.length > 0) {
+      left = records.length > 1 ? records[records.length - 1] : records[0];
+    }
+    if (!right && records.length > 0) {
+      right = records[0];
+    }
+
+    return { defaultLeft: left, defaultRight: right, matchHint: hint, matchType: mType };
+  }, [records, appointmentId, leftIdParam, rightIdParam]);
+
+  const [leftRecord, setLeftRecord] = useState<HistoryRecord | null>(defaultLeft);
+  const [rightRecord, setRightRecord] = useState<HistoryRecord | null>(defaultRight);
   const [activePhotoType, setActivePhotoType] = useState<number>(0);
   const [sliderValue, setSliderValue] = useState(50);
 
@@ -31,6 +85,9 @@ const ComparePage: React.FC = () => {
 
   const leftPhoto = useMemo(() => getPhotoAt(safeLeft, activePhotoType), [safeLeft, activePhotoType]);
   const rightPhoto = useMemo(() => getPhotoAt(safeRight, activePhotoType), [safeRight, activePhotoType]);
+
+  const missingLeft = !safeLeft;
+  const missingRight = !safeRight;
 
   const handleLeftSelect = () => {
     if (records.length === 0) return;
@@ -63,16 +120,19 @@ const ComparePage: React.FC = () => {
   };
 
   const handlePreviewLeft = () => {
+    if (!safeLeft) return;
     const urls = safeLeft.photos?.length ? safeLeft.photos : [PLACEHOLDER];
     Taro.previewImage({ urls, current: leftPhoto });
   };
 
   const handlePreviewRight = () => {
+    if (!safeRight) return;
     const urls = safeRight.photos?.length ? safeRight.photos : [PLACEHOLDER];
     Taro.previewImage({ urls, current: rightPhoto });
   };
 
-  const calcInterval = (a: HistoryRecord, b: HistoryRecord) => {
+  const calcInterval = (a: HistoryRecord | null, b: HistoryRecord | null) => {
+    if (!a || !b) return '—';
     try {
       const d1 = new Date(a.date);
       const d2 = new Date(b.date);
@@ -86,16 +146,37 @@ const ComparePage: React.FC = () => {
 
   return (
     <View className={styles.container}>
-      <View className={styles.selector}>
-        <View className={styles.selectorItem} onClick={handleLeftSelect}>
-          <Text className={styles.label}>对比前</Text>
-          <Text className={styles.value}>{safeLeft.date}</Text>
-          <Text className={styles.subLabel}>{safeLeft.typeLabel}</Text>
+      {matchHint && (
+        <View className={classnames(
+          styles.matchHint,
+          matchHint.startsWith('⚠️') ? styles.hintWarn : styles.hintOk
+        )}>
+          <Text>{matchHint}</Text>
         </View>
-        <View className={styles.selectorItem} onClick={handleRightSelect}>
+      )}
+
+      <View className={styles.selector}>
+        <View className={classnames(styles.selectorItem, missingLeft && styles.missing)} onClick={handleLeftSelect}>
+          <Text className={styles.label}>对比前</Text>
+          {safeLeft ? (
+            <>
+              <Text className={styles.value}>{safeLeft.date}</Text>
+              <Text className={styles.subLabel}>{safeLeft.typeLabel}</Text>
+            </>
+          ) : (
+            <Text className={styles.emptyVal}>点击选择记录</Text>
+          )}
+        </View>
+        <View className={classnames(styles.selectorItem, missingRight && styles.missing)} onClick={handleRightSelect}>
           <Text className={styles.label}>对比后</Text>
-          <Text className={styles.value}>{safeRight.date}</Text>
-          <Text className={styles.subLabel}>{safeRight.typeLabel}</Text>
+          {safeRight ? (
+            <>
+              <Text className={styles.value}>{safeRight.date}</Text>
+              <Text className={styles.subLabel}>{safeRight.typeLabel}</Text>
+            </>
+          ) : (
+            <Text className={styles.emptyVal}>点击选择记录</Text>
+          )}
         </View>
       </View>
 
@@ -113,23 +194,39 @@ const ComparePage: React.FC = () => {
 
       <ScrollView scrollY className={styles.compareSection}>
         <View className={styles.compareGrid}>
-          <View className={styles.compareItem}>
+          <View className={classnames(styles.compareItem, missingLeft && styles.missingItem)}>
             <View className={styles.itemHeader}>
-              <Text className={styles.itemLabel}>{safeLeft.typeLabel}</Text>
-              <Text className={styles.itemDate}>{safeLeft.date}</Text>
+              <Text className={styles.itemLabel}>{safeLeft?.typeLabel || '暂无记录'}</Text>
+              <Text className={styles.itemDate}>{safeLeft?.date || '—'}</Text>
             </View>
             <View className={styles.photoWrapper} onClick={handlePreviewLeft}>
-              <Image className={styles.photo} src={leftPhoto} mode="aspectFill" />
+              {safeLeft ? (
+                <Image className={styles.photo} src={leftPhoto} mode="aspectFill" />
+              ) : (
+                <View className={styles.emptyPhoto}>
+                  <Text className={styles.emptyIcon}>📭</Text>
+                  <Text className={styles.emptyPhotoText}>尚未有自拍记录</Text>
+                  <Text className={styles.emptyPhotoSub}>完成拍摄后可在此对比</Text>
+                </View>
+              )}
             </View>
           </View>
 
-          <View className={styles.compareItem}>
+          <View className={classnames(styles.compareItem, missingRight && styles.missingItem)}>
             <View className={styles.itemHeader}>
-              <Text className={styles.itemLabel}>{safeRight.typeLabel}</Text>
-              <Text className={styles.itemDate}>{safeRight.date}</Text>
+              <Text className={styles.itemLabel}>{safeRight?.typeLabel || '暂无记录'}</Text>
+              <Text className={styles.itemDate}>{safeRight?.date || '—'}</Text>
             </View>
             <View className={styles.photoWrapper} onClick={handlePreviewRight}>
-              <Image className={styles.photo} src={rightPhoto} mode="aspectFill" />
+              {safeRight ? (
+                <Image className={styles.photo} src={rightPhoto} mode="aspectFill" />
+              ) : (
+                <View className={styles.emptyPhoto}>
+                  <Text className={styles.emptyIcon}>🦷</Text>
+                  <Text className={styles.emptyPhotoText}>暂无诊室拍摄记录</Text>
+                  <Text className={styles.emptyPhotoSub}>复诊当天医生会补充</Text>
+                </View>
+              )}
             </View>
           </View>
         </View>
@@ -166,11 +263,15 @@ const ComparePage: React.FC = () => {
 
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>对比前</Text>
-            <Text className={styles.infoValue}>{safeLeft.date} · {safeLeft.typeLabel}</Text>
+            <Text className={styles.infoValue}>
+              {safeLeft ? `${safeLeft.date} · ${safeLeft.typeLabel}` : '—'}
+            </Text>
           </View>
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>对比后</Text>
-            <Text className={styles.infoValue}>{safeRight.date} · {safeRight.typeLabel}</Text>
+            <Text className={styles.infoValue}>
+              {safeRight ? `${safeRight.date} · ${safeRight.typeLabel}` : '—'}
+            </Text>
           </View>
           <View className={styles.infoItem}>
             <Text className={styles.infoLabel}>间隔时间</Text>
@@ -181,7 +282,7 @@ const ComparePage: React.FC = () => {
             <Text className={styles.infoValue}>{photoTypes[activePhotoType]}</Text>
           </View>
 
-          {safeRight.doctorNote && (
+          {safeRight?.doctorNote && (
             <View className={styles.doctorNote}>
               <Text className={styles.noteLabel}>📝 医生备注</Text>
               <Text className={styles.noteText}>{safeRight.doctorNote}</Text>

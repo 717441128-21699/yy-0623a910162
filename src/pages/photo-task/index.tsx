@@ -53,8 +53,14 @@ const PhotoTaskPage: React.FC = () => {
       dispatch({ type: 'SUBMIT_TASK' });
       Taro.hideLoading();
       Taro.showToast({ title: '提交成功，请等待护士核对', icon: 'success' });
-      setTimeout(() => Taro.navigateBack(), 1500);
+      setTimeout(() => {
+        Taro.redirectTo({ url: '/pages/photo-report/index?from=patient' });
+      }, 1200);
     }, 800);
+  };
+
+  const handleGoReport = () => {
+    Taro.navigateTo({ url: '/pages/photo-report/index?from=patient' });
   };
 
   const getStatusText = (status: string) => {
@@ -201,6 +207,12 @@ const PhotoTaskPage: React.FC = () => {
       </ScrollView>
 
       <View className={styles.bottomBar}>
+        {(task.status === 'reviewing' || task.status === 'approved' || task.status === 'rejected') && (
+          <View className={styles.reportBtn} onClick={handleGoReport}>
+            <Text className={styles.reportIcon}>📊</Text>
+            <Text>查看拍照报告</Text>
+          </View>
+        )}
         {task.status === 'reviewing' && (
           <View className={styles.reviewingHint}>
             <Text className={styles.hintIcon}>⏳</Text>
